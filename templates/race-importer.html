@@ -1,0 +1,127 @@
+<div class="race-importer-window">
+  <div class="race-importer-tabs">
+    <div class="race-importer-tab active" data-tab="url">
+      {{localize "RACE_IMPORTER.URLTab"}}
+    </div>
+    <div class="race-importer-tab" data-tab="text">
+      {{localize "RACE_IMPORTER.TextTab"}}
+    </div>
+    <div class="race-importer-tab" data-tab="settings">
+      {{localize "RACE_IMPORTER.SettingsTab"}}
+    </div>
+  </div>
+
+  <!-- URL Tab -->
+  <div id="url-content" class="race-importer-content active">
+    <div class="race-importer-instructions">
+      {{localize "RACE_IMPORTER.Instructions"}}
+    </div>
+
+    <div class="race-importer-form-group">
+      <label for="race-url">{{localize "RACE_IMPORTER.URL"}}</label>
+      <input type="text" id="race-url" placeholder="{{localize 'RACE_IMPORTER.URLPlaceholder'}}">
+    </div>
+
+    <div class="race-importer-button-row">
+      <button id="fetch-url-btn" class="race-importer-button secondary">
+        <i class="fas fa-download"></i> {{localize "RACE_IMPORTER.FetchURL"}}
+      </button>
+    </div>
+
+    <div class="race-importer-form-group">
+      <label for="url-preview">Content Preview</label>
+      <textarea id="url-preview" readonly placeholder="Fetched content will appear here..."></textarea>
+    </div>
+
+    <div class="race-importer-button-row">
+      <button id="import-url-btn" class="race-importer-button">
+        <i class="fas fa-file-import"></i> {{localize "RACE_IMPORTER.Import"}}
+      </button>
+    </div>
+  </div>
+
+  <!-- Text Tab -->
+  <div id="text-content" class="race-importer-content">
+    <div class="race-importer-instructions">
+      Paste race/species information from any source. The AI will extract and structure the data automatically.
+    </div>
+
+    <div class="race-importer-form-group">
+      <label for="race-text">{{localize "RACE_IMPORTER.Text"}}</label>
+      <textarea id="race-text" placeholder="{{localize 'RACE_IMPORTER.TextPlaceholder'}}"></textarea>
+    </div>
+
+    <div class="race-importer-button-row">
+      <button id="import-text-btn" class="race-importer-button">
+        <i class="fas fa-file-import"></i> {{localize "RACE_IMPORTER.Import"}}
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="settings-content" class="race-importer-content">
+    <div class="race-importer-settings-grid">
+      <div class="race-importer-form-group">
+        <label for="ollama-url">{{localize "RACE_IMPORTER.OllamaURL"}}</label>
+        <input type="text" id="ollama-url" value="{{ollamaUrl}}">
+      </div>
+
+      <div class="race-importer-form-group">
+        <label for="ollama-model">{{localize "RACE_IMPORTER.OllamaModel"}}</label>
+        <input type="text" id="ollama-model" value="{{ollamaModel}}">
+      </div>
+
+      <div class="race-importer-form-group">
+        <label for="system-type">{{localize "RACE_IMPORTER.SystemType"}}</label>
+        <select id="system-type">
+          <option value="dnd5e" {{#if (eq systemType "dnd5e")}}selected{{/if}}>D&D 5th Edition</option>
+          <option value="pf2e" {{#if (eq systemType "pf2e")}}selected{{/if}}>Pathfinder 2nd Edition</option>
+          <option value="generic" {{#if (eq systemType "generic")}}selected{{/if}}>Generic/Other</option>
+        </select>
+      </div>
+
+      <div class="race-importer-form-group">
+        <label for="target-compendium">Species Compendium</label>
+        <select id="target-compendium">
+          <option value="">-- Select Compendium --</option>
+          {{#each compendiums}}
+            <option value="{{this.id}}" {{#if (eq this.id ../selectedCompendium)}}selected{{/if}}>
+              {{this.name}}
+            </option>
+          {{/each}}
+        </select>
+      </div>
+
+      <div class="race-importer-form-group">
+        <label for="traits-compendium">Traits Compendium (Optional)</label>
+        <select id="traits-compendium">
+          <option value="">-- Use Same as Species --</option>
+          {{#each compendiums}}
+            <option value="{{this.id}}" {{#if (eq this.id ../selectedTraitsCompendium)}}selected{{/if}}>
+              {{this.name}}
+            </option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+
+    <div class="race-importer-button-row" style="margin-top: 20px;">
+      <button id="test-connection-btn" class="race-importer-button secondary">
+        <i class="fas fa-plug"></i> {{localize "RACE_IMPORTER.TestConnection"}}
+      </button>
+    </div>
+
+    <div class="setup-info">
+      <h4>Setup Instructions:</h4>
+      <ol>
+        <li>Install Ollama from <a href="https://ollama.com" target="_blank">ollama.com</a></li>
+        <li>Run: <code>ollama run llama3</code></li>
+        <li>Make sure Ollama is running (default: http://localhost:11434)</li>
+        <li>Test the connection using the button above</li>
+        <li>Select or create a compendium for your imported races</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="race-importer-status"></div>
+</div>

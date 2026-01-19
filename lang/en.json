@@ -1,0 +1,32 @@
+{
+  "RACE_IMPORTER": {
+    "Title": "Race Importer",
+    "ImportRace": "Import Race/Species",
+    "URLTab": "From URL",
+    "TextTab": "From Text",
+    "SettingsTab": "Settings",
+    "URL": "Web Address",
+    "URLPlaceholder": "https://example.com/race-info",
+    "Text": "Race Information",
+    "TextPlaceholder": "Paste race/species information here...",
+    "OllamaURL": "Ollama Server URL",
+    "OllamaModel": "Ollama Model",
+    "CompendiumName": "Target Compendium",
+    "FetchURL": "Fetch from URL",
+    "Import": "Import to Foundry",
+    "Processing": "Processing...",
+    "Success": "Successfully imported {name}!",
+    "Error": "Error: {error}",
+    "OllamaError": "Could not connect to Ollama. Make sure it's running at {url}",
+    "ValidationError": "Failed to validate race data from Ollama",
+    "NoCompendium": "No compendium selected",
+    "SystemType": "Game System",
+    "FetchingURL": "Fetching content from URL...",
+    "ParsingWithOllama": "Parsing with Ollama AI...",
+    "CreatingDocument": "Creating Foundry document...",
+    "TestConnection": "Test Connection",
+    "ConnectionSuccess": "Successfully connected to Ollama!",
+    "ConnectionFailed": "Failed to connect to Ollama",
+    "Instructions": "Enter a URL to a race/species page or paste the information directly. The AI will extract and structure the data for Foundry VTT."
+  }
+}
