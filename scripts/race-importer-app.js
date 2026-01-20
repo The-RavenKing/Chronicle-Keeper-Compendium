@@ -1,14 +1,13 @@
 export class RaceImporterApp extends Application {
   constructor(options = {}) {
     super(options);
-    this.activeTab = 'url';
+    this.activeTab = 'text'; // Default to text tab now
   }
 
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'race-importer',
       title: game.i18n.localize('RACE_IMPORTER.Title') || "Race Importer",
-      // IMPORTANT: This path matches the new folder name
       template: 'modules/chronicle-keeper-compendium/templates/race-importer.html',
       width: 650,
       height: 600,
@@ -43,8 +42,7 @@ export class RaceImporterApp extends Application {
   activateListeners(html) {
     super.activateListeners(html);
     html.find('.race-importer-tab').click(this._onTabClick.bind(this));
-    html.find('#fetch-url-btn').click(this._onFetchURL.bind(this));
-    html.find('#import-url-btn').click(this._onImportFromURL.bind(this));
+    // Removed URL fetch listeners
     html.find('#import-text-btn').click(this._onImportFromText.bind(this));
     html.find('#test-connection-btn').click(this._onTestConnection.bind(this));
     html.find('#relink-compendiums-btn').click(this._onRelinkCompendiums.bind(this));
@@ -121,79 +119,51 @@ export class RaceImporterApp extends Application {
     event.preventDefault();
     const button = $(event.currentTarget);
     const ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');
+    
     button.prop('disabled', true);
-    this._showStatus('info', 'Testing connection...');
+    ui.notifications.info('Testing connection to Ollama...'); 
+    
     try {
       const response = await fetch(`${ollamaUrl}/api/tags`);
       if (response.ok) {
-        this._showStatus('success', "Successfully connected to Ollama!");
+        ui.notifications.info("✅ Successfully connected to Ollama!");
+        this._showStatus('success', "Connected!");
       } else {
-        this._showStatus('error', "Connected, but Ollama returned an error.");
+        ui.notifications.warn("⚠️ Connected, but Ollama returned an error.");
       }
     } catch (error) {
-      this._showStatus('error', `Could not connect to Ollama at ${ollamaUrl}`);
+      ui.notifications.error(`❌ Could not connect to Ollama at ${ollamaUrl}`);
+      this._showStatus('error', "Connection failed");
     } finally {
       button.prop('disabled', false);
     }
-  }
-
-  async _onFetchURL(event) {
-    event.preventDefault();
-    const button = $(event.currentTarget);
-    const url = this.element.find('#race-url').val().trim();
-    if (!url) { this._showStatus('error', 'Please enter a URL'); return; }
-    button.prop('disabled', true);
-    this._showStatus('info', "Fetching content...");
-    try {
-      const content = await this._fetchURL(url);
-      this.element.find('#url-preview').val(content);
-      this._showStatus('success', 'Content fetched successfully');
-    } catch (error) {
-      this._showStatus('error', `Failed to fetch URL: ${error.message}`);
-    } finally {
-      button.prop('disabled', false);
-    }
-  }
-
-  async _onImportFromURL(event) {
-    event.preventDefault();
-    const content = this.element.find('#url-preview').val().trim();
-    if (!content) { this._showStatus('error', 'No content to import.'); return; }
-    await this._importRace(content);
   }
 
   async _onImportFromText(event) {
     event.preventDefault();
     const content = this.element.find('#race-text').val().trim();
-    if (!content) { this._showStatus('error', 'Please enter race information'); return; }
+    if (!content) { ui.notifications.warn('Please enter race information'); return; }
     await this._importRace(content);
   }
 
-  async _fetchURL(url) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const html = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      doc.querySelectorAll('script, style, nav, footer, header').forEach(el => el.remove());
-      return doc.body.textContent || doc.body.innerText || '';
-    } catch (error) {
-      throw new Error(`Failed to fetch URL: ${error.message}`);
-    }
-  }
+  // Removed _onFetchURL, _onImportFromURL, _fetchURL
 
   async _importRace(content) {
     const button = this.element.find('button:contains("Import")');
     button.prop('disabled', true);
+    
     try {
       this._showStatus('info', "Parsing with Ollama AI...");
       const raceData = await this._parseWithOllama(content);
+      
       this._showStatus('info', "Creating Foundry document...");
       await this._createRaceDocument(raceData);
-      this._showStatus('success', `Successfully imported ${raceData.name}!`);
+      
+      this._showStatus('success', `Done!`);
+      ui.notifications.info(`✅ Successfully imported ${raceData.name}!`);
     } catch (error) {
       console.error('Race import error:', error);
+      ui.notifications.error(`Import Error: ${error.message}`);
       this._showStatus('error', `Error: ${error.message}`);
     } finally {
       button.prop('disabled', false);
@@ -204,18 +174,28 @@ export class RaceImporterApp extends Application {
     const ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');
     const ollamaModel = game.settings.get('chronicle-keeper-compendium', 'ollamaModel');
     const systemType = game.settings.get('chronicle-keeper-compendium', 'systemType');
+    
     const prompt = this._buildOllamaPrompt(content, systemType);
     console.log('Chronicle Keeper | Sending to Ollama...');
+    
     try {
       const response = await fetch(`${ollamaUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: ollamaModel, prompt: prompt, stream: false, format: 'json' })
       });
+      
       if (!response.ok) throw new Error(`Ollama API error: ${response.status}`);
+      
       const result = await response.json();
+      console.log('Chronicle Keeper | Raw Ollama response:', result.response);
+      
       const jsonData = JSON.parse(result.response);
+      console.log('Chronicle Keeper | Parsed JSON:', jsonData);
+      
       const validated = this._validateRaceData(jsonData);
+      console.log('Chronicle Keeper | Validated data:', validated);
+      
       return validated;
     } catch (error) {
       console.error('Chronicle Keeper | Parse error:', error);
@@ -268,7 +248,7 @@ ${content}`;
   _validateRaceData(data) {
     if (!data.name) throw new Error('Missing race name');
     
-    // SAFETY NET: Manual scan for missed skills (Fixes the "skillCount: 0" issue)
+    // SAFETY NET: Manual scan for missed skills
     if (!data.proficiencies) data.proficiencies = {};
     if (!data.proficiencies.skillCount || data.proficiencies.skillCount === 0) {
       const skillRegex = /(?:choose|select|pick|proficiency\s+in)\s+(?:any\s+)?(\d+|one|two|three|four)\s+skills?/i;
@@ -380,7 +360,6 @@ ${content}`;
       }
     };
 
-    // LOGIC: Add Skill Choice Advancement directly to the TRAIT
     if (raceData.proficiencies.traitName === trait.name && raceData.proficiencies.skillCount > 0) {
        console.log(`Chronicle Keeper | Adding Skill Advancement to TRAIT: ${trait.name}`);
        const allSkills = [

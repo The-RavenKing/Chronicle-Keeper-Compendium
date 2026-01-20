@@ -1,9 +1,6 @@
 <div class="race-importer-window">
   <div class="race-importer-tabs">
-    <div class="race-importer-tab active" data-tab="url">
-      <i class="fas fa-globe"></i> {{localize "RACE_IMPORTER.URLTab"}}
-    </div>
-    <div class="race-importer-tab" data-tab="text">
+    <div class="race-importer-tab active" data-tab="text">
       <i class="fas fa-file-alt"></i> {{localize "RACE_IMPORTER.TextTab"}}
     </div>
     <div class="race-importer-tab" data-tab="settings">
@@ -11,35 +8,7 @@
     </div>
   </div>
 
-  <div id="url-content" class="race-importer-content active">
-    <div class="race-importer-instructions">
-      <i class="fas fa-info-circle"></i> {{localize "RACE_IMPORTER.Instructions"}}
-    </div>
-
-    <div class="race-importer-form-group">
-      <label for="race-url">{{localize "RACE_IMPORTER.URL"}}</label>
-      <input type="text" id="race-url" placeholder="e.g. https://www.dndbeyond.com/races/tabaxi">
-    </div>
-
-    <div class="race-importer-button-row">
-      <button id="fetch-url-btn" class="race-importer-button secondary">
-        <i class="fas fa-cloud-download-alt"></i> {{localize "RACE_IMPORTER.FetchURL"}}
-      </button>
-    </div>
-
-    <div class="race-importer-form-group">
-      <label for="url-preview">Content Preview</label>
-      <textarea id="url-preview" readonly placeholder="Fetched content will appear here..."></textarea>
-    </div>
-
-    <div class="race-importer-button-row">
-      <button id="import-url-btn" class="race-importer-button">
-        <i class="fas fa-magic"></i> {{localize "RACE_IMPORTER.Import"}}
-      </button>
-    </div>
-  </div>
-
-  <div id="text-content" class="race-importer-content">
+  <div id="text-content" class="race-importer-content active">
     <div class="race-importer-instructions">
       <i class="fas fa-paste"></i> Paste race/species information below. The AI will extract Name, Speed, Size, Traits, and more automatically.
     </div>
