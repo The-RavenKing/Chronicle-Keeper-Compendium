@@ -1,97 +1,59 @@
 <div class="race-importer-window">
   <div class="race-importer-tabs">
     <div class="race-importer-tab active" data-tab="text">
-      <i class="fas fa-file-alt"></i> {{localize "RACE_IMPORTER.TextTab"}}
+      <i class="fas fa-file-alt"></i> Import
     </div>
     <div class="race-importer-tab" data-tab="settings">
-      <i class="fas fa-cogs"></i> {{localize "RACE_IMPORTER.SettingsTab"}}
+      <i class="fas fa-cogs"></i> Settings
     </div>
   </div>
 
   <div id="text-content" class="race-importer-content active">
+    
+    <div class="race-importer-form-group" style="margin-bottom: 20px;">
+      <label for="import-type-select" style="color: #dcb367;">Content Type</label>
+      <select id="import-type-select" style="width: 100%; height: 40px; font-weight: bold;">
+        {{#each importTypes}}
+          <option value="{{this.value}}" {{#if this.disabled}}disabled{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
     <div class="race-importer-instructions">
-      <i class="fas fa-paste"></i> Paste race/species information below. The AI will extract Name, Speed, Size, Traits, and more automatically.
+      <i class="fas fa-paste"></i> Paste text below. The AI will extract data based on the Type selected above.
     </div>
 
     <div class="race-importer-form-group">
-      <label for="race-text">{{localize "RACE_IMPORTER.Text"}}</label>
-      <textarea id="race-text" placeholder="Paste race data here (PDF copy, Wiki text, Homebrew)..."></textarea>
+      <label for="race-text">Source Text</label>
+      <textarea id="race-text" placeholder="Paste data here (PDF copy, Wiki text, Homebrew)..."></textarea>
     </div>
 
     <div class="race-importer-button-row">
       <button id="import-text-btn" class="race-importer-button">
-        <i class="fas fa-magic"></i> {{localize "RACE_IMPORTER.Import"}}
+        <i class="fas fa-magic"></i> Import to Foundry
       </button>
     </div>
   </div>
 
   <div id="settings-content" class="race-importer-content">
-    
     <div class="race-importer-settings-grid">
       <div>
         <div class="race-importer-form-group">
-          <label for="ollama-url"><i class="fas fa-server"></i> {{localize "RACE_IMPORTER.OllamaURL"}}</label>
+          <label for="ollama-url">Ollama URL</label>
           <input type="text" id="ollama-url" value="{{ollamaUrl}}">
         </div>
-        <div class="race-importer-form-group">
-          <label for="system-type"><i class="fas fa-dice-d20"></i> {{localize "RACE_IMPORTER.SystemType"}}</label>
-          <select id="system-type">
-            <option value="dnd5e" {{#if (eq systemType "dnd5e")}}selected{{/if}}>D&D 5th Edition</option>
-            <option value="pf2e" {{#if (eq systemType "pf2e")}}selected{{/if}}>Pathfinder 2nd Edition</option>
-            <option value="generic" {{#if (eq systemType "generic")}}selected{{/if}}>Generic/Other</option>
-          </select>
-        </div>
-        <div class="race-importer-form-group">
-          <label for="target-compendium"><i class="fas fa-book"></i> Species Compendium</label>
-          <select id="target-compendium">
-            <option value="">-- Select Compendium --</option>
-            {{#each compendiums}}
-              <option value="{{this.id}}" {{#if (eq this.id ../selectedCompendium)}}selected{{/if}}>
-                {{this.name}}
-              </option>
-            {{/each}}
-          </select>
-        </div>
       </div>
-
       <div>
         <div class="race-importer-form-group">
-          <label for="ollama-model"><i class="fas fa-brain"></i> {{localize "RACE_IMPORTER.OllamaModel"}}</label>
+          <label for="ollama-model">Ollama Model</label>
           <input type="text" id="ollama-model" value="{{ollamaModel}}">
-        </div>
-        
-        <div class="race-importer-form-group" style="height: 64px;"></div> 
-
-        <div class="race-importer-form-group">
-          <label for="traits-compendium"><i class="fas fa-list"></i> Traits Compendium (Optional)</label>
-          <select id="traits-compendium">
-            <option value="">-- Use Same as Species --</option>
-            {{#each compendiums}}
-              <option value="{{this.id}}" {{#if (eq this.id ../selectedTraitsCompendium)}}selected{{/if}}>
-                {{this.name}}
-              </option>
-            {{/each}}
-          </select>
         </div>
       </div>
     </div>
-
     <div class="race-importer-button-row">
-      <button id="relink-compendiums-btn" class="race-importer-button secondary" title="Repair broken compendium links">
-        <i class="fas fa-sync"></i> Relink Compendiums
-      </button>
       <button id="test-connection-btn" class="race-importer-button secondary">
-        <i class="fas fa-plug"></i> {{localize "RACE_IMPORTER.TestConnection"}}
+        <i class="fas fa-plug"></i> Test Connection
       </button>
-    </div>
-
-    <div class="setup-info">
-      <h4><i class="fas fa-lightbulb"></i> Quick Setup</h4>
-      <ol>
-        <li>Make sure <strong>Ollama</strong> is running (<a href="http://localhost:11434" target="_blank">check here</a>)</li>
-        <li>Ensure you have the model installed: <code>ollama run {{ollamaModel}}</code></li>
-        <li>Use <strong>Relink Compendiums</strong> if you see "Compendium not found" errors.</li>
-      </ol>
     </div>
   </div>
 
