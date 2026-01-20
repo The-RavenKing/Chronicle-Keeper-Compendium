@@ -2,10 +2,10 @@ import { RaceImporterApp } from './race-importer-app.js';
 
 // 1. INITIALIZATION & SETTINGS
 Hooks.once('init', () => {
-  console.log('Race Importer | Initializing');
+  console.log('Chronicle Keeper | Initializing');
   
-  // Register module settings
-  game.settings.register('race-importer-ollama', 'ollamaUrl', {
+  // Register module settings using the NEW ID
+  game.settings.register('chronicle-keeper-compendium', 'ollamaUrl', {
     name: 'Ollama Server URL',
     hint: 'The URL where your Ollama server is running (e.g., http://localhost:11434)',
     scope: 'world',
@@ -14,7 +14,7 @@ Hooks.once('init', () => {
     default: 'http://localhost:11434'
   });
   
-  game.settings.register('race-importer-ollama', 'ollamaModel', {
+  game.settings.register('chronicle-keeper-compendium', 'ollamaModel', {
     name: 'Ollama Model',
     hint: 'The Ollama model to use for parsing (e.g., llama3, mistral, etc.)',
     scope: 'world',
@@ -24,15 +24,15 @@ Hooks.once('init', () => {
   });
   
   // Hidden settings for Compendium Linking
-  game.settings.register('race-importer-ollama', 'targetCompendium', {
+  game.settings.register('chronicle-keeper-compendium', 'targetCompendium', {
     scope: 'world', config: false, type: String, default: ''
   });
   
-  game.settings.register('race-importer-ollama', 'traitsCompendium', {
+  game.settings.register('chronicle-keeper-compendium', 'traitsCompendium', {
     scope: 'world', config: false, type: String, default: ''
   });
   
-  game.settings.register('race-importer-ollama', 'systemType', {
+  game.settings.register('chronicle-keeper-compendium', 'systemType', {
     name: 'Game System',
     scope: 'world',
     config: false,
@@ -42,7 +42,7 @@ Hooks.once('init', () => {
   });
 
   // Settings Menu Button
-  game.settings.register('race-importer-ollama', 'openButton', {
+  game.settings.register('chronicle-keeper-compendium', 'openButton', {
     name: "Open Race Importer",
     hint: "Click to open the Race Importer",
     scope: "world",
@@ -52,21 +52,19 @@ Hooks.once('init', () => {
     onChange: value => {
       if (value) {
         new RaceImporterApp().render(true);
-        game.settings.set('race-importer-ollama', 'openButton', false);
+        game.settings.set('chronicle-keeper-compendium', 'openButton', false);
       }
     }
   });
 });
 
-// 2. COMPENDIUM SIDEBAR BUTTON (Moved OUT of 'ready' to ensure it loads)
+// 2. COMPENDIUM SIDEBAR BUTTON
 Hooks.on('renderCompendiumDirectory', (app, html) => {
   if (!game.user.isGM) return;
 
-  // Use jQuery wrapper
   const $html = $(html);
   $html.find('.race-importer-sidebar-button').remove();
   
-  // Create button
   const $button = $(`
     <button class="race-importer-sidebar-button">
       <i class="fas fa-download"></i> Import Race/Species
@@ -78,7 +76,6 @@ Hooks.on('renderCompendiumDirectory', (app, html) => {
     new RaceImporterApp().render(true);
   });
   
-  // Inject button
   const $headerActions = $html.find('.header-actions');
   const $createButton = $html.find('button[data-action="createCompendium"]');
   
@@ -91,79 +88,34 @@ Hooks.on('renderCompendiumDirectory', (app, html) => {
   }
 });
 
-// 3. TOKEN LAYER BUTTON (Backup)
-Hooks.on('getSceneControlButtons', (controls) => {
-  if (!game.user.isGM) return;
-  if (!Array.isArray(controls)) return;
-
-  const tokenControls = controls.find(c => c.name === 'token');
-  if (tokenControls && tokenControls.tools) {
-    tokenControls.tools.push({
-      name: 'race-importer',
-      title: 'Import Race/Species',
-      icon: 'fas fa-book-dead',
-      onClick: () => new RaceImporterApp().render(true),
-      button: true
-    });
-  }
-});
-
-// 4. READY HOOK (Compendium Setup & Macro)
+// 3. READY HOOK
 Hooks.once('ready', async () => {
-  console.log('Race Importer | Ready');
+  console.log('Chronicle Keeper | Ready');
 
-  // Auto-setup Compendiums
   if (game.user.isGM) {
     await setupCompendiumStructure();
   }
   
   // Global API
-  game.modules.get('race-importer-ollama').api = {
-    open: () => new RaceImporterApp().render(true),
-    RaceImporterApp: RaceImporterApp
-  };
-  window.RaceImporter = game.modules.get('race-importer-ollama').api;
-  
-  // Create Macro
-  if (game.user.isGM) {
-    setTimeout(async () => {
-      const existingMacro = game.macros.find(m => 
-        m.name === "Race Importer" && 
-        (m.command.includes("RaceImporterApp") || m.command.includes("RaceImporter"))
-      );
-      
-      if (!existingMacro) {
-        try {
-          await Macro.create({
-            name: "Race Importer",
-            type: "script",
-            img: "icons/svg/book.svg",
-            command: "game.modules.get('race-importer-ollama').api.open();",
-            ownership: { default: 0, [game.user.id]: 3 }
-          });
-          console.log('Race Importer | Created macro automatically');
-        } catch (error) {
-          console.error('Race Importer | Could not create macro:', error);
-        }
-      }
-    }, 2000);
+  const module = game.modules.get('chronicle-keeper-compendium');
+  if (module) {
+    module.api = {
+      open: () => new RaceImporterApp().render(true),
+      RaceImporterApp: RaceImporterApp
+    };
+    window.RaceImporter = module.api;
   }
 });
 
-/**
- * Creates folder and compendiums automatically, then links them.
- */
 async function setupCompendiumStructure() {
   try {
     const folderName = "Chronicle Keeper";
     
-    // 1. Create Folder
     let folder = game.folders.find(f => f.type === "Compendium" && f.name === folderName);
     if (!folder) {
       folder = await Folder.create({ name: folderName, type: "Compendium", color: "#8b4513" });
     }
 
-    // 2. Ensure Compendiums
     const speciesPackName = "chronicle-keeper-species";
     let speciesPack = game.packs.get(`world.${speciesPackName}`);
     if (!speciesPack) {
@@ -182,17 +134,17 @@ async function setupCompendiumStructure() {
     }
     if (folder && traitsPack.folder?.id !== folder.id) await traitsPack.configure({ folder: folder.id });
 
-    // 3. Link Settings
-    const currentSpeciesTarget = game.settings.get('race-importer-ollama', 'targetCompendium');
+    // Link settings if currently empty
+    const currentSpeciesTarget = game.settings.get('chronicle-keeper-compendium', 'targetCompendium');
     if (!currentSpeciesTarget && speciesPack) {
-      await game.settings.set('race-importer-ollama', 'targetCompendium', speciesPack.collection);
+      await game.settings.set('chronicle-keeper-compendium', 'targetCompendium', speciesPack.collection);
     }
-    const currentTraitsTarget = game.settings.get('race-importer-ollama', 'traitsCompendium');
+    const currentTraitsTarget = game.settings.get('chronicle-keeper-compendium', 'traitsCompendium');
     if (!currentTraitsTarget && traitsPack) {
-      await game.settings.set('race-importer-ollama', 'traitsCompendium', traitsPack.collection);
+      await game.settings.set('chronicle-keeper-compendium', 'traitsCompendium', traitsPack.collection);
     }
     
   } catch (error) {
-    console.error('Race Importer | Compendium setup error:', error);
+    console.error('Chronicle Keeper | Compendium setup error:', error);
   }
 }

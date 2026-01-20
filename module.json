@@ -1,16 +1,14 @@
 {
-  "id": "race-importer-ollama",
-  "title": "Chronicle Keeper - Compendium Import",
-  "description": "Import races/species from web URLs or text using Ollama AI to parse and create compendium entries",
+  "id": "chronicle-keeper-compendium",
+  "title": "Chronicle Keeper - Compendium Importer",
+  "description": "Import races/species from web URLs or text using Ollama AI.",
   "version": "1.6.0",
   "compatibility": {
     "minimum": "11",
-    "verified": "12"
+    "verified": "13"
   },
   "authors": [
-    {
-      "name": "Race Importer"
-    }
+    { "name": "Chronicle Keeper" }
   ],
   "esmodules": [
     "scripts/main.js"
@@ -25,18 +23,16 @@
       "path": "lang/en.json"
     }
   ],
-  "url": "",
-  "manifest": "",
-  "download": "",
   "relationships": {
     "systems": [
       {
         "id": "dnd5e",
         "type": "system",
-        "compatibility": {
-          "verified": "3.0"
-        }
+        "compatibility": {}
       }
     ]
-  }
+  },
+  "url": "",
+  "manifest": "",
+  "download": ""
 }
