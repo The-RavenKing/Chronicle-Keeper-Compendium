@@ -8,7 +8,7 @@ export class RaceImporterApp extends Application {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'race-importer',
       title: game.i18n.localize('RACE_IMPORTER.Title') || "Race Importer",
-      // CRITICAL: This path now matches your folder name
+      // IMPORTANT: This path matches the new folder name
       template: 'modules/chronicle-keeper-compendium/templates/race-importer.html',
       width: 650,
       height: 600,
@@ -214,11 +214,8 @@ export class RaceImporterApp extends Application {
       });
       if (!response.ok) throw new Error(`Ollama API error: ${response.status}`);
       const result = await response.json();
-      console.log('Chronicle Keeper | Raw Ollama response:', result.response);
       const jsonData = JSON.parse(result.response);
-      console.log('Chronicle Keeper | Parsed JSON:', jsonData);
       const validated = this._validateRaceData(jsonData);
-      console.log('Chronicle Keeper | Validated data:', validated);
       return validated;
     } catch (error) {
       console.error('Chronicle Keeper | Parse error:', error);
@@ -271,7 +268,7 @@ ${content}`;
   _validateRaceData(data) {
     if (!data.name) throw new Error('Missing race name');
     
-    // SAFETY NET: Manual scan for missed skills
+    // SAFETY NET: Manual scan for missed skills (Fixes the "skillCount: 0" issue)
     if (!data.proficiencies) data.proficiencies = {};
     if (!data.proficiencies.skillCount || data.proficiencies.skillCount === 0) {
       const skillRegex = /(?:choose|select|pick|proficiency\s+in)\s+(?:any\s+)?(\d+|one|two|three|four)\s+skills?/i;
@@ -383,6 +380,7 @@ ${content}`;
       }
     };
 
+    // LOGIC: Add Skill Choice Advancement directly to the TRAIT
     if (raceData.proficiencies.traitName === trait.name && raceData.proficiencies.skillCount > 0) {
        console.log(`Chronicle Keeper | Adding Skill Advancement to TRAIT: ${trait.name}`);
        const allSkills = [

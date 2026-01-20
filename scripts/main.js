@@ -134,7 +134,6 @@ async function setupCompendiumStructure() {
     }
     if (folder && traitsPack.folder?.id !== folder.id) await traitsPack.configure({ folder: folder.id });
 
-    // Link settings if currently empty
     const currentSpeciesTarget = game.settings.get('chronicle-keeper-compendium', 'targetCompendium');
     if (!currentSpeciesTarget && speciesPack) {
       await game.settings.set('chronicle-keeper-compendium', 'targetCompendium', speciesPack.collection);
