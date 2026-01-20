@@ -8,7 +8,7 @@ export class RaceImporterApp extends Application {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'race-importer',
       title: game.i18n.localize('RACE_IMPORTER.Title') || "Race Importer",
-      // CRITICAL UPDATE: Path must match your new folder name
+      // CRITICAL: This path now matches your folder name
       template: 'modules/chronicle-keeper-compendium/templates/race-importer.html',
       width: 650,
       height: 600,
@@ -21,7 +21,7 @@ export class RaceImporterApp extends Application {
 
   getData() {
     const data = super.getData();
-    // Use new module ID for settings
+    
     data.ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');
     data.ollamaModel = game.settings.get('chronicle-keeper-compendium', 'ollamaModel');
     data.systemType = game.settings.get('chronicle-keeper-compendium', 'systemType');
@@ -271,7 +271,7 @@ ${content}`;
   _validateRaceData(data) {
     if (!data.name) throw new Error('Missing race name');
     
-    // SAFETY NET: Manual scan for missed skills (Fixes the "skillCount: 0" issue)
+    // SAFETY NET: Manual scan for missed skills
     if (!data.proficiencies) data.proficiencies = {};
     if (!data.proficiencies.skillCount || data.proficiencies.skillCount === 0) {
       const skillRegex = /(?:choose|select|pick|proficiency\s+in)\s+(?:any\s+)?(\d+|one|two|three|four)\s+skills?/i;
@@ -331,7 +331,6 @@ ${content}`;
     
     if (raceData.traits.length > 0) {
       for (const trait of raceData.traits) {
-        // Pass raceData so we can check for skill traits
         const traitItemData = this._buildTraitItem(trait, raceData);
         
         const existingTrait = existingTraits.find(i => i.name === trait.name);
@@ -384,7 +383,6 @@ ${content}`;
       }
     };
 
-    // LOGIC: Add Skill Choice Advancement directly to the TRAIT
     if (raceData.proficiencies.traitName === trait.name && raceData.proficiencies.skillCount > 0) {
        console.log(`Chronicle Keeper | Adding Skill Advancement to TRAIT: ${trait.name}`);
        const allSkills = [
