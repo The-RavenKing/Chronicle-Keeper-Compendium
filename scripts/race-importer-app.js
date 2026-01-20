@@ -1,6 +1,7 @@
 import { SpeciesStrategy } from './strategies/species-strategy.js';
 import { ClassStrategy } from './strategies/class-strategy.js';
 import { SpellStrategy } from './strategies/spell-strategy.js';
+import { MonsterStrategy } from './strategies/monster-strategy.js'; // Added Monster Strategy
 
 export class RaceImporterApp extends Application {
   constructor(options = {}) {
@@ -11,7 +12,8 @@ export class RaceImporterApp extends Application {
     this.strategies = {
       'species': new SpeciesStrategy(),
       'class': new ClassStrategy(),
-      'spell': new SpellStrategy()
+      'spell': new SpellStrategy(),
+      'monster': new MonsterStrategy() // Added Monster Strategy
     };
     
     // Default to species
@@ -35,17 +37,20 @@ export class RaceImporterApp extends Application {
   getData() {
     const data = super.getData();
     
+    // Retrieve settings
     data.ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');
     data.ollamaModel = game.settings.get('chronicle-keeper-compendium', 'ollamaModel');
     data.systemType = game.settings.get('chronicle-keeper-compendium', 'systemType');
     
-    // THIS ARRAY POPULATES THE DROPDOWN
+    // Populate the dropdown with all supported types
     data.importTypes = [
       { value: 'species', label: 'Race / Species' },
       { value: 'class', label: 'Class' },
-      { value: 'spell', label: 'Spell' }
+      { value: 'spell', label: 'Spell' },
+      { value: 'monster', label: 'Monster / NPC' } // Added option
     ];
     
+    // Get list of Item compendiums for the settings dropdown
     data.compendiums = game.packs
       .filter(pack => pack.documentName === 'Item')
       .map(pack => ({
@@ -61,18 +66,26 @@ export class RaceImporterApp extends Application {
 
   activateListeners(html) {
     super.activateListeners(html);
+    
+    // Tab Navigation
     html.find('.race-importer-tab').click(this._onTabClick.bind(this));
     
-    // LISTEN FOR DROPDOWN CHANGES
+    // Strategy Switcher (Dropdown)
     html.find('#import-type-select').change(this._onTypeChange.bind(this));
 
+    // Main Action Buttons
     html.find('#import-text-btn').click(this._onImportFromText.bind(this));
     html.find('#test-connection-btn').click(this._onTestConnection.bind(this));
     
+    // Settings Changes
     html.find('#ollama-url').change(this._onSettingChange.bind(this));
     html.find('#ollama-model').change(this._onSettingChange.bind(this));
     html.find('#target-compendium').change(this._onSettingChange.bind(this));
   }
+
+  /* -------------------------------------------- */
+  /* Event Handlers                              */
+  /* -------------------------------------------- */
 
   _onTabClick(event) {
     event.preventDefault();
@@ -80,6 +93,7 @@ export class RaceImporterApp extends Application {
     this.activeTab = tab;
     const html = this.element;
     
+    // Visual tab switching
     html.find('.race-importer-tab').removeClass('active');
     html.find(`.race-importer-tab[data-tab="${tab}"]`).addClass('active');
     html.find('.race-importer-content').removeClass('active');
@@ -91,6 +105,8 @@ export class RaceImporterApp extends Application {
     if (this.strategies[type]) {
       this.currentStrategy = this.strategies[type];
       console.log(`Chronicle Keeper | Switched strategy to: ${type}`);
+    } else {
+      console.error(`Chronicle Keeper | Unknown strategy type: ${type}`);
     }
   }
 
@@ -107,15 +123,25 @@ export class RaceImporterApp extends Application {
     
     try {
       this._showStatus('info', `Parsing ${this.currentStrategy.key} with Ollama AI...`);
+      
+      // 1. Get the specific prompt for the current strategy
       const prompt = this.currentStrategy.getPrompt(content);
+      
+      // 2. Send prompt to Ollama (Generic logic)
       const jsonData = await this._callOllama(prompt);
+      
+      // 3. Validate data using the strategy's rules
       const validatedData = this.currentStrategy.validate(jsonData);
       
+      // 4. Create the items in Foundry using the strategy's logic
       this._showStatus('info', "Creating Foundry document...");
       await this.currentStrategy.create(validatedData);
       
       this._showStatus('success', `Done!`);
-      ui.notifications.info(`✅ Successfully imported ${validatedData.name}!`);
+      // ui.notifications.info is handled inside some strategies, but good to have a fallback here if needed
+      if (!validatedData.suppressNotification) { 
+          ui.notifications.info(`✅ Successfully imported ${validatedData.name}!`);
+      }
       
     } catch (error) {
       console.error('Import error:', error);
@@ -163,6 +189,10 @@ export class RaceImporterApp extends Application {
       await game.settings.set('chronicle-keeper-compendium', settingMap[setting], value);
     }
   }
+
+  /* -------------------------------------------- */
+  /* Internal Methods                            */
+  /* -------------------------------------------- */
 
   async _callOllama(prompt) {
     const ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');

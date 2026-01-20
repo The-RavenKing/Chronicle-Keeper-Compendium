@@ -2,10 +2,11 @@ import { RaceImporterApp } from './race-importer-app.js';
 
 // 1. INITIALIZATION & SETTINGS
 Hooks.once('init', () => {
+  const ID = 'chronicle-keeper-compendium';
   console.log('Chronicle Keeper | Initializing');
   
-  // Register module settings
-  game.settings.register('chronicle-keeper-compendium', 'ollamaUrl', {
+  // -- Server Settings --
+  game.settings.register(ID, 'ollamaUrl', {
     name: 'Ollama Server URL',
     hint: 'The URL where your Ollama server is running (e.g., http://localhost:11434)',
     scope: 'world',
@@ -14,7 +15,7 @@ Hooks.once('init', () => {
     default: 'http://localhost:11434'
   });
   
-  game.settings.register('chronicle-keeper-compendium', 'ollamaModel', {
+  game.settings.register(ID, 'ollamaModel', {
     name: 'Ollama Model',
     hint: 'The Ollama model to use for parsing (e.g., llama3, mistral, etc.)',
     scope: 'world',
@@ -23,16 +24,18 @@ Hooks.once('init', () => {
     default: 'llama3'
   });
   
-  // Hidden settings for Compendium Linking
-  game.settings.register('chronicle-keeper-compendium', 'targetCompendium', {
+  // -- Target Compendiums (Defaults) --
+  // We keep these generic so the strategies can fallback to them if needed
+  game.settings.register(ID, 'targetCompendium', {
     scope: 'world', config: false, type: String, default: ''
   });
   
-  game.settings.register('chronicle-keeper-compendium', 'traitsCompendium', {
+  game.settings.register(ID, 'traitsCompendium', {
     scope: 'world', config: false, type: String, default: ''
   });
   
-  game.settings.register('chronicle-keeper-compendium', 'systemType', {
+  // -- System --
+  game.settings.register(ID, 'systemType', {
     name: 'Game System',
     scope: 'world',
     config: false,
@@ -41,8 +44,8 @@ Hooks.once('init', () => {
     choices: { 'dnd5e': 'D&D 5th Edition', 'pf2e': 'Pathfinder 2nd Edition', 'generic': 'Generic/Other' }
   });
 
-  // Settings Menu Button
-  game.settings.register('chronicle-keeper-compendium', 'openButton', {
+  // -- Sidebar Button Settings --
+  game.settings.register(ID, 'openButton', {
     name: "Open Race Importer",
     hint: "Click to open the Race Importer",
     scope: "world",
@@ -52,7 +55,7 @@ Hooks.once('init', () => {
     onChange: value => {
       if (value) {
         new RaceImporterApp().render(true);
-        game.settings.set('chronicle-keeper-compendium', 'openButton', false);
+        game.settings.set(ID, 'openButton', false);
       }
     }
   });
@@ -67,7 +70,7 @@ Hooks.on('renderCompendiumDirectory', (app, html) => {
   
   const $button = $(`
     <button class="race-importer-sidebar-button">
-      <i class="fas fa-download"></i> Import Race/Species
+      <i class="fas fa-download"></i> Import Content
     </button>
   `);
   
@@ -88,7 +91,7 @@ Hooks.on('renderCompendiumDirectory', (app, html) => {
   }
 });
 
-// 3. READY HOOK
+// 3. READY HOOK - Setup Compendiums
 Hooks.once('ready', async () => {
   console.log('Chronicle Keeper | Ready');
 
@@ -109,38 +112,67 @@ Hooks.once('ready', async () => {
 
 async function setupCompendiumStructure() {
   try {
+    const ID = 'chronicle-keeper-compendium';
     const folderName = "Chronicle Keeper";
     
+    // 1. Create the Folder to organize them
     let folder = game.folders.find(f => f.type === "Compendium" && f.name === folderName);
     if (!folder) {
       folder = await Folder.create({ name: folderName, type: "Compendium", color: "#8b4513" });
     }
 
-    const speciesPackName = "chronicle-keeper-species";
-    let speciesPack = game.packs.get(`world.${speciesPackName}`);
-    if (!speciesPack) {
-      speciesPack = await CompendiumCollection.createCompendium({
-        label: "Species", name: speciesPackName, type: "Item", package: "world"
-      });
-    }
-    if (folder && speciesPack.folder?.id !== folder.id) await speciesPack.configure({ folder: folder.id });
+    // 2. Define ALL Compendiums needed
+    const packs = [
+      // Race / Species
+      { name: "chronicle-keeper-species", label: "Species", type: "Item" },
+      { name: "chronicle-keeper-traits", label: "Species Traits", type: "Item" },
+      
+      // Classes & Subclasses
+      { name: "chronicle-keeper-classes", label: "Classes", type: "Item" },
+      { name: "chronicle-keeper-subclasses", label: "Subclasses", type: "Item" },
+      { name: "chronicle-keeper-features", label: "Class Features", type: "Item" }, // <-- For Feats inside classes
+      
+      // Spells
+      { name: "chronicle-keeper-spells", label: "Spells", type: "Item" },
+      
+      // Items (Magical & Mundane)
+      { name: "chronicle-keeper-items", label: "Items & Equipment", type: "Item" },
+      
+      // Monsters (Actors)
+      { name: "chronicle-keeper-monsters", label: "Monsters (NPCs)", type: "Actor" } // <-- Important: Type is Actor
+    ];
 
-    const traitsPackName = "chronicle-keeper-traits";
-    let traitsPack = game.packs.get(`world.${traitsPackName}`);
-    if (!traitsPack) {
-      traitsPack = await CompendiumCollection.createCompendium({
-        label: "Traits", name: traitsPackName, type: "Item", package: "world"
-      });
+    // 3. Loop and Create
+    for (const p of packs) {
+      const packId = `world.${p.name}`;
+      let pack = game.packs.get(packId);
+      
+      if (!pack) {
+        console.log(`Chronicle Keeper | Creating Compendium: ${p.label}`);
+        pack = await CompendiumCollection.createCompendium({
+          label: p.label,
+          name: p.name,
+          type: p.type,
+          package: "world"
+        });
+      }
+      
+      // Organize into the folder
+      if (folder && pack.folder?.id !== folder.id) {
+        await pack.configure({ folder: folder.id });
+      }
     }
-    if (folder && traitsPack.folder?.id !== folder.id) await traitsPack.configure({ folder: folder.id });
 
-    const currentSpeciesTarget = game.settings.get('chronicle-keeper-compendium', 'targetCompendium');
-    if (!currentSpeciesTarget && speciesPack) {
-      await game.settings.set('chronicle-keeper-compendium', 'targetCompendium', speciesPack.collection);
+    // 4. Ensure Default Links exist
+    // We default to Species just to have *something* selected, but the user can change it
+    const currentTarget = game.settings.get(ID, 'targetCompendium');
+    if (!currentTarget) {
+      await game.settings.set(ID, 'targetCompendium', `world.chronicle-keeper-species`);
     }
-    const currentTraitsTarget = game.settings.get('chronicle-keeper-compendium', 'traitsCompendium');
-    if (!currentTraitsTarget && traitsPack) {
-      await game.settings.set('chronicle-keeper-compendium', 'traitsCompendium', traitsPack.collection);
+    
+    const currentTraits = game.settings.get(ID, 'traitsCompendium');
+    if (!currentTraits) {
+      await game.settings.set(ID, 'traitsCompendium', `world.chronicle-keeper-traits`);
     }
     
   } catch (error) {
