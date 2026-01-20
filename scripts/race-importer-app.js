@@ -7,7 +7,7 @@ export class RaceImporterApp extends Application {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'race-importer',
-      title: game.i18n.localize('RACE_IMPORTER.Title'),
+      title: game.i18n.localize('RACE_IMPORTER.Title') || "Race Importer",
       template: 'modules/race-importer-ollama/templates/race-importer.html',
       width: 650,
       height: 600,
@@ -21,12 +21,10 @@ export class RaceImporterApp extends Application {
   getData() {
     const data = super.getData();
     
-    // Get settings
     data.ollamaUrl = game.settings.get('race-importer-ollama', 'ollamaUrl');
     data.ollamaModel = game.settings.get('race-importer-ollama', 'ollamaModel');
     data.systemType = game.settings.get('race-importer-ollama', 'systemType');
     
-    // Get available compendiums
     data.compendiums = game.packs
       .filter(pack => pack.documentName === 'Item')
       .map(pack => ({
@@ -43,17 +41,12 @@ export class RaceImporterApp extends Application {
 
   activateListeners(html) {
     super.activateListeners(html);
-
-    // Tab switching
     html.find('.race-importer-tab').click(this._onTabClick.bind(this));
-
-    // Buttons
     html.find('#fetch-url-btn').click(this._onFetchURL.bind(this));
     html.find('#import-url-btn').click(this._onImportFromURL.bind(this));
     html.find('#import-text-btn').click(this._onImportFromText.bind(this));
     html.find('#test-connection-btn').click(this._onTestConnection.bind(this));
-
-    // Save settings on change
+    html.find('#relink-compendiums-btn').click(this._onRelinkCompendiums.bind(this));
     html.find('#ollama-url').change(this._onSettingChange.bind(this));
     html.find('#ollama-model').change(this._onSettingChange.bind(this));
     html.find('#target-compendium').change(this._onSettingChange.bind(this));
@@ -65,8 +58,6 @@ export class RaceImporterApp extends Application {
     event.preventDefault();
     const tab = $(event.currentTarget).data('tab');
     this.activeTab = tab;
-    
-    // Update UI
     const html = this.element;
     html.find('.race-importer-tab').removeClass('active');
     html.find(`.race-importer-tab[data-tab="${tab}"]`).addClass('active');
@@ -77,7 +68,6 @@ export class RaceImporterApp extends Application {
   async _onSettingChange(event) {
     const setting = $(event.currentTarget).attr('id');
     const value = $(event.currentTarget).val();
-    
     const settingMap = {
       'ollama-url': 'ollamaUrl',
       'ollama-model': 'ollamaModel',
@@ -85,9 +75,44 @@ export class RaceImporterApp extends Application {
       'traits-compendium': 'traitsCompendium',
       'system-type': 'systemType'
     };
-    
     if (settingMap[setting]) {
       await game.settings.set('race-importer-ollama', settingMap[setting], value);
+    }
+  }
+
+  async _onRelinkCompendiums(event) {
+    event.preventDefault();
+    const btn = $(event.currentTarget);
+    const icon = btn.find('i');
+    btn.prop('disabled', true);
+    icon.addClass('fa-spin');
+    
+    try {
+      const speciesPack = game.packs.get("world.chronicle-keeper-species");
+      const traitsPack = game.packs.get("world.chronicle-keeper-traits");
+      let found = 0;
+
+      if (speciesPack) {
+        await game.settings.set('race-importer-ollama', 'targetCompendium', speciesPack.collection);
+        found++;
+      }
+      if (traitsPack) {
+        await game.settings.set('race-importer-ollama', 'traitsCompendium', traitsPack.collection);
+        found++;
+      }
+
+      if (found > 0) {
+        ui.notifications.info(`Chronicle Keeper: Successfully relinked ${found} compendiums!`);
+        this.render(true);
+      } else {
+        ui.notifications.warn("Chronicle Keeper: Could not find default compendiums.");
+      }
+    } catch (error) {
+      console.error(error);
+      ui.notifications.error("Error relinking compendiums.");
+    } finally {
+      btn.prop('disabled', false);
+      icon.removeClass('fa-spin');
     }
   }
 
@@ -95,19 +120,17 @@ export class RaceImporterApp extends Application {
     event.preventDefault();
     const button = $(event.currentTarget);
     const ollamaUrl = game.settings.get('race-importer-ollama', 'ollamaUrl');
-    
     button.prop('disabled', true);
     this._showStatus('info', 'Testing connection...');
-    
     try {
       const response = await fetch(`${ollamaUrl}/api/tags`);
       if (response.ok) {
-        this._showStatus('success', game.i18n.localize('RACE_IMPORTER.ConnectionSuccess'));
+        this._showStatus('success', "Successfully connected to Ollama!");
       } else {
-        this._showStatus('error', game.i18n.localize('RACE_IMPORTER.ConnectionFailed'));
+        this._showStatus('error', "Connected, but Ollama returned an error.");
       }
     } catch (error) {
-      this._showStatus('error', game.i18n.format('RACE_IMPORTER.OllamaError', { url: ollamaUrl }));
+      this._showStatus('error', `Could not connect to Ollama at ${ollamaUrl}`);
     } finally {
       button.prop('disabled', false);
     }
@@ -117,15 +140,9 @@ export class RaceImporterApp extends Application {
     event.preventDefault();
     const button = $(event.currentTarget);
     const url = this.element.find('#race-url').val().trim();
-    
-    if (!url) {
-      this._showStatus('error', 'Please enter a URL');
-      return;
-    }
-    
+    if (!url) { this._showStatus('error', 'Please enter a URL'); return; }
     button.prop('disabled', true);
-    this._showStatus('info', game.i18n.localize('RACE_IMPORTER.FetchingURL'));
-    
+    this._showStatus('info', "Fetching content...");
     try {
       const content = await this._fetchURL(url);
       this.element.find('#url-preview').val(content);
@@ -140,43 +157,25 @@ export class RaceImporterApp extends Application {
   async _onImportFromURL(event) {
     event.preventDefault();
     const content = this.element.find('#url-preview').val().trim();
-    
-    if (!content) {
-      this._showStatus('error', 'No content to import. Fetch a URL first.');
-      return;
-    }
-    
+    if (!content) { this._showStatus('error', 'No content to import.'); return; }
     await this._importRace(content);
   }
 
   async _onImportFromText(event) {
     event.preventDefault();
     const content = this.element.find('#race-text').val().trim();
-    
-    if (!content) {
-      this._showStatus('error', 'Please enter race information');
-      return;
-    }
-    
+    if (!content) { this._showStatus('error', 'Please enter race information'); return; }
     await this._importRace(content);
   }
 
   async _fetchURL(url) {
-    // Use a CORS proxy or direct fetch depending on the URL
     try {
       const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const html = await response.text();
-      
-      // Extract text from HTML
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
-      
-      // Remove script and style elements
       doc.querySelectorAll('script, style, nav, footer, header').forEach(el => el.remove());
-      
       return doc.body.textContent || doc.body.innerText || '';
     } catch (error) {
       throw new Error(`Failed to fetch URL: ${error.message}`);
@@ -184,22 +183,17 @@ export class RaceImporterApp extends Application {
   }
 
   async _importRace(content) {
-    const button = this.element.find('.race-importer-button:contains("Import")');
+    const button = this.element.find('button:contains("Import")');
     button.prop('disabled', true);
-    
     try {
-      // Step 1: Parse with Ollama
-      this._showStatus('info', game.i18n.localize('RACE_IMPORTER.ParsingWithOllama'));
+      this._showStatus('info', "Parsing with Ollama AI...");
       const raceData = await this._parseWithOllama(content);
-      
-      // Step 2: Create Foundry document
-      this._showStatus('info', game.i18n.localize('RACE_IMPORTER.CreatingDocument'));
+      this._showStatus('info', "Creating Foundry document...");
       await this._createRaceDocument(raceData);
-      
-      this._showStatus('success', game.i18n.format('RACE_IMPORTER.Success', { name: raceData.name }));
+      this._showStatus('success', `Successfully imported ${raceData.name}!`);
     } catch (error) {
       console.error('Race import error:', error);
-      this._showStatus('error', game.i18n.format('RACE_IMPORTER.Error', { error: error.message }));
+      this._showStatus('error', `Error: ${error.message}`);
     } finally {
       button.prop('disabled', false);
     }
@@ -209,44 +203,21 @@ export class RaceImporterApp extends Application {
     const ollamaUrl = game.settings.get('race-importer-ollama', 'ollamaUrl');
     const ollamaModel = game.settings.get('race-importer-ollama', 'ollamaModel');
     const systemType = game.settings.get('race-importer-ollama', 'systemType');
-    
     const prompt = this._buildOllamaPrompt(content, systemType);
-    
     console.log('Race Importer | Sending to Ollama...');
-    
     try {
       const response = await fetch(`${ollamaUrl}/api/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: ollamaModel,
-          prompt: prompt,
-          stream: false,
-          format: 'json'
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: ollamaModel, prompt: prompt, stream: false, format: 'json' })
       });
-      
-      if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.status}`);
-      }
-      
+      if (!response.ok) throw new Error(`Ollama API error: ${response.status}`);
       const result = await response.json();
       console.log('Race Importer | Raw Ollama response:', result.response);
-      
       const jsonData = JSON.parse(result.response);
       console.log('Race Importer | Parsed JSON:', jsonData);
-      
       const validated = this._validateRaceData(jsonData);
       console.log('Race Importer | Validated data:', validated);
-      
-      // Store for debugging
-      if (!game.modules.get('race-importer-ollama')._debug) {
-        game.modules.get('race-importer-ollama')._debug = {};
-      }
-      game.modules.get('race-importer-ollama')._debug.lastImport = validated;
-      
       return validated;
     } catch (error) {
       console.error('Race Importer | Parse error:', error);
@@ -255,182 +226,100 @@ export class RaceImporterApp extends Application {
   }
 
   _buildOllamaPrompt(content, systemType) {
-    return `Extract race/species information from the following text and return ONLY valid JSON (no markdown, no preamble) with this exact structure:
+    // AGGRESSIVE PROMPT: Focuses on list extraction
+    return `Extract species information from the text below and return strictly valid JSON.
 
+Required JSON Structure:
 {
-  "name": "Tabaxi",
-  "description": "Tabaxi's appearance is as varied as their attitudes",
-  "creatureType": "Humanoid",
-  "size": {
-    "value": "med",
-    "options": ["sm", "med"]
-  },
-  "movement": {
-    "walk": 30,
-    "climb": 30,
-    "fly": 0,
-    "swim": 0,
-    "burrow": 0,
-    "hover": false
-  },
-  "senses": {
-    "darkvision": 60,
-    "blindsight": 0,
-    "tremorsense": 0,
-    "truesight": 0
-  },
+  "name": "Race Name",
+  "description": "Flavor text...",
+  "creatureType": "Humanoid", 
+  "size": { "value": "med", "options": ["sm", "med"] },
+  "movement": { "walk": 30, "climb": 0, "fly": 0, "swim": 0 },
+  "senses": { "darkvision": 0, "blindsight": 0 },
   "abilityScoreIncrease": {
     "type": "flexible",
-    "options": {
-      "increases": 3,
-      "pool": [1, 1, 1]
-    }
+    "options": { "increases": 3, "pool": [1, 1, 1] }
   },
   "traits": [
     {
-      "name": "Cat's Claws",
-      "description": "Full description with all mechanics",
-      "isAttack": true,
-      "damage": {
-        "parts": [["1d6", "slashing"]],
-        "base": "str"
-      }
-    },
-    {
-      "name": "Cat's Talent",
-      "description": "You have proficiency in Perception and Stealth",
-      "isAttack": false
-    },
-    {
-      "name": "Darkvision",
-      "description": "You can see in dim light within 60 feet",
-      "isAttack": false
-    },
-    {
-      "name": "Feline Agility",
-      "description": "When you move on your turn you can double your speed",
+      "name": "Trait Name",
+      "description": "Full description of the trait.",
       "isAttack": false
     }
   ],
-  "languages": {
-    "value": ["common"],
-    "custom": "one other language"
-  },
-  "proficiencies": {
-    "skills": ["perception", "stealth"]
+  "languages": { "value": ["common"], "custom": "one choice" },
+  "proficiencies": { 
+    "skills": [], 
+    "skillCount": 0,
+    "traitName": ""
   }
 }
 
-CRITICAL RULES:
+RULES:
+1. EXTRACT EVERY BOLDED HEADER AS A TRAIT. Do not skip "Expert Duplication" or "Mimicry".
+2. "isAttack": true ONLY if it is a natural weapon (bite, claw).
+3. SKILLS: If text says "choose two skills" or "proficiency in two skills":
+   - Set "skillCount": 2.
+   - Set "traitName": "Name of the trait" (e.g. Kenku Recall).
+   - Leave "skills": [] empty.
 
-1. EXTRACT ALL TRAITS - Don't skip any! Common traits include:
-   - Attack traits (claws, bite, horns, etc.)
-   - Skill proficiencies (as a trait if mentioned)
-   - Darkvision (ALWAYS make this a separate trait if mentioned!)
-   - Special movement (if it's a special ability, make it a trait)
-   - Unique racial abilities (like Feline Agility, Lucky, Brave, etc.)
-
-2. FOR ATTACK TRAITS ONLY:
-   - Set "isAttack": true
-   - Include "damage" object with parts and base
-   - Example: Cat's Claws, Bite, Horns, Talons
-
-3. FOR NON-ATTACK TRAITS:
-   - Set "isAttack": false
-   - DO NOT include "damage" field at all
-   - Example: Darkvision, Feline Agility, Lucky, Brave, skill proficiencies
-
-4. CREATURE TYPE:
-   - ALWAYS set to "Humanoid" unless explicitly stated otherwise
-   - Capitalize it
-
-5. MOVEMENT:
-   - "climbing speed equal to walking speed" → climb: same as walk
-   - Always include walk speed (default 30)
-
-6. DARKVISION:
-   - If darkvision is mentioned, set senses.darkvision to the distance
-   - ALSO create a separate trait for it!
-
-7. ABILITY SCORES:
-   - 2024 rules: always use flexible type
-   - "increase one by 2 and one by 1" = increases: 2, pool: [2, 1]
-   - "increase three by 1" = increases: 3, pool: [1, 1, 1]
-
-8. LANGUAGES:
-   - Standard languages in "value" array: ["common", "elvish"]
-   - Choice text in "custom": "one other language of your choice"
-
-9. SKILLS:
-   - List in proficiencies.skills: ["perception", "stealth"]
-   - Lowercase names
-
-Source text:
-${content}
-
-Return ONLY the JSON object. Make sure to extract EVERY trait mentioned!`;
+SOURCE TEXT:
+${content}`;
   }
 
   _validateRaceData(data) {
-    if (!data.name) {
-      throw new Error('Missing race name');
-    }
+    if (!data.name) throw new Error('Missing race name');
     
-    // Ensure required fields exist with proper defaults
+    // --- SAFETY NET: Manual scan for missed skills ---
+    // If AI failed to set skillCount (it was 0), scan traits manually
+    if (!data.proficiencies) data.proficiencies = {};
+    if (!data.proficiencies.skillCount || data.proficiencies.skillCount === 0) {
+      
+      const skillRegex = /(?:choose|select|pick|proficiency\s+in)\s+(?:any\s+)?(\d+|one|two|three|four)\s+skills?/i;
+      const numMap = { 'one': 1, 'two': 2, 'three': 3, 'four': 4 };
+
+      // Look through all traits
+      if (data.traits) {
+        for (const trait of data.traits) {
+          const match = trait.description.match(skillRegex);
+          if (match) {
+            let count = parseInt(match[1]);
+            if (isNaN(count)) count = numMap[match[1].toLowerCase()] || 0;
+            
+            if (count > 0) {
+              console.log(`Race Importer | Safety Net: Found ${count} skills in ${trait.name}`);
+              data.proficiencies.skillCount = count;
+              data.proficiencies.traitName = trait.name;
+              break; // Stop after finding the first one
+            }
+          }
+        }
+      }
+    }
+    // ------------------------------------------------
+
     data.description = data.description || '';
-    data.creatureType = data.creatureType || 'humanoid';
-    
-    // Validate and set defaults for size
+    data.creatureType = data.creatureType || 'Humanoid';
     if (!data.size || typeof data.size === 'string') {
-      // Convert old string format to new object format
-      const sizeMap = {
-        'Tiny': 'tiny',
-        'Small': 'sm',
-        'Medium': 'med',
-        'Large': 'lg',
-        'Huge': 'huge',
-        'Gargantuan': 'grg'
-      };
-      const sizeValue = data.size ? (sizeMap[data.size] || 'med') : 'med';
-      data.size = { value: sizeValue, options: [sizeValue] };
+      const sizeMap = { 'Tiny': 'tiny', 'Small': 'sm', 'Medium': 'med', 'Large': 'lg', 'Huge': 'huge' };
+      const val = data.size ? (sizeMap[data.size] || 'med') : 'med';
+      data.size = { value: val, options: [val] };
     }
-    
-    // Ensure movement exists
     data.movement = data.movement || { walk: 30 };
-    
-    // Ensure senses exists
     data.senses = data.senses || {};
-    
-    // Validate ability score increase
     if (!data.abilityScoreIncrease) {
-      // Default to 2024 flexible increases
-      data.abilityScoreIncrease = {
-        type: 'flexible',
-        options: { increases: 3, pool: [1, 1, 1] }
-      };
+      data.abilityScoreIncrease = { type: 'flexible', options: { increases: 3, pool: [1, 1, 1] } };
     }
-    
-    // Ensure traits is an array
     data.traits = data.traits || [];
-    
-    // Validate languages format
     if (Array.isArray(data.languages)) {
-      // Convert old array format to new object format
-      data.languages = {
-        value: data.languages.map(l => l.toLowerCase()),
-        custom: ''
-      };
+      data.languages = { value: data.languages.map(l => l.toLowerCase()), custom: '' };
     } else if (!data.languages) {
       data.languages = { value: ['common'], custom: '' };
     }
     
-    // Ensure proficiencies exists
-    data.proficiencies = data.proficiencies || {
-      skills: [],
-      weapons: [],
-      armor: [],
-      tools: []
-    };
+    data.proficiencies.skills = data.proficiencies.skills || [];
+    data.proficiencies.skillCount = data.proficiencies.skillCount || 0;
     
     return data;
   }
@@ -439,65 +328,60 @@ Return ONLY the JSON object. Make sure to extract EVERY trait mentioned!`;
     const speciesCompendiumId = game.settings.get('race-importer-ollama', 'targetCompendium');
     const traitsCompendiumId = game.settings.get('race-importer-ollama', 'traitsCompendium');
     
-    if (!speciesCompendiumId) {
-      throw new Error(game.i18n.localize('RACE_IMPORTER.NoCompendium'));
-    }
-    
+    if (!speciesCompendiumId) throw new Error("Species compendium not found");
     const speciesPack = game.packs.get(speciesCompendiumId);
-    if (!speciesPack) {
-      throw new Error('Species compendium not found');
-    }
-    
-    // Use traits compendium if specified, otherwise use same as species
+    if (!speciesPack) throw new Error("Species compendium pack not found");
     const traitsPack = traitsCompendiumId ? game.packs.get(traitsCompendiumId) : speciesPack;
-    if (!traitsPack) {
-      throw new Error('Traits compendium not found');
-    }
     
-    console.log(`Race Importer | Species compendium: ${speciesPack.title}`);
-    console.log(`Race Importer | Traits compendium: ${traitsPack.title}`);
-    console.log(`Race Importer | Creating ${raceData.traits?.length || 0} trait items...`);
+    // --- STEP 1: Handle Traits ---
+    // Fetch ALL existing traits to prevent duplicates
+    const existingTraits = await traitsPack.getDocuments();
+    const traitMap = new Map();
     
-    // First, create the trait items and store their UUIDs
-    const traitMap = new Map(); // name -> uuid
-    if (raceData.traits && raceData.traits.length > 0) {
+    if (raceData.traits.length > 0) {
       for (const trait of raceData.traits) {
-        console.log(`Race Importer | Creating trait: ${trait.name}`, trait);
-        const traitItem = this._buildTraitItem(trait, raceData.name);
-        console.log(`Race Importer | Trait item data:`, traitItem);
-        const created = await traitsPack.documentClass.create(traitItem, { pack: traitsPack.collection });
-        const uuid = `Compendium.${traitsPack.collection}.${created.id}`;
-        traitMap.set(trait.name, uuid);
-        console.log(`Race Importer | Created trait ${trait.name} with UUID: ${uuid}`);
+        const traitItemData = this._buildTraitItem(trait, raceData.name);
+        
+        // Robust check for duplicate trait
+        const existingTrait = existingTraits.find(i => i.name === trait.name);
+        let created;
+        
+        if (existingTrait) {
+          console.log(`Race Importer | Updating existing trait: ${trait.name}`);
+          created = existingTrait;
+          await created.update(traitItemData);
+        } else {
+          console.log(`Race Importer | Creating new trait: ${trait.name}`);
+          created = await traitsPack.documentClass.create(traitItemData, { pack: traitsPack.collection });
+        }
+        
+        traitMap.set(trait.name, created.uuid);
       }
     }
     
-    console.log(`Race Importer | Created ${traitMap.size} traits`);
-    
-    // Build the main species item data
+    // --- STEP 2: Handle Species ---
     const itemData = this._buildItemData(raceData);
-    console.log('Race Importer | Species item data:', itemData);
     
-    // Update ItemGrant advancements to use UUIDs instead of IDs
     if (itemData.system.advancement) {
       itemData.system.advancement.forEach(adv => {
         if (adv.type === 'ItemGrant' && adv.configuration) {
-          const traitName = adv.title;
-          const uuid = traitMap.get(traitName);
-          if (uuid) {
-            adv.configuration.items = [uuid];
-            console.log(`Race Importer | Linked ${traitName} to UUID: ${uuid}`);
-          } else {
-            console.warn(`Race Importer | Could not find UUID for trait: ${traitName}`);
-          }
+          const uuid = traitMap.get(adv.title);
+          if (uuid) adv.configuration.items = [uuid];
         }
       });
     }
     
-    // Create the species document in the species compendium
-    console.log(`Race Importer | Creating species: ${raceData.name}`);
-    const species = await speciesPack.documentClass.create(itemData, { pack: speciesPack.collection });
-    console.log(`Race Importer | Created species with ID: ${species.id}`);
+    const existingSpecies = (await speciesPack.getDocuments()).find(i => i.name === raceData.name);
+    
+    if (existingSpecies) {
+      console.log(`Race Importer | Updating existing species: ${raceData.name}`);
+      await existingSpecies.update(itemData);
+      ui.notifications.info(`Updated existing species: ${raceData.name}`);
+    } else {
+      console.log(`Race Importer | Creating new species: ${raceData.name}`);
+      await speciesPack.documentClass.create(itemData, { pack: speciesPack.collection });
+      ui.notifications.info(`Created new species: ${raceData.name}`);
+    }
   }
 
   _buildTraitItem(trait, raceName) {
@@ -506,453 +390,168 @@ Return ONLY the JSON object. Make sure to extract EVERY trait mentioned!`;
       type: 'feat',
       img: trait.isAttack ? 'icons/skills/melee/strike-sword-steel-yellow.webp' : 'icons/svg/upgrade.svg',
       system: {
-        description: {
-          value: `<p>${trait.description}</p>`,
-          chat: '',
-          unidentified: ''
-        },
-        source: {
-          book: 'Imported',
-          page: '',
-          custom: `${raceName} Trait`
-        },
-        type: {
-          value: 'race',
-          subtype: ''
-        },
-        requirements: '',
-        recharge: {
-          value: null,
-          charged: true
-        },
-        uses: {
-          value: null,
-          max: '',
-          per: null,
-          recovery: ''
-        },
-        properties: []
+        description: { value: `<p>${trait.description}</p>` },
+        source: { custom: `${raceName} Trait` },
+        type: { value: 'race', subtype: '' }
       }
     };
-
-    // ONLY add activity if this is an attack trait with damage
-    if (trait.isAttack === true && trait.damage && trait.damage.parts && trait.damage.parts.length > 0) {
+    if (trait.isAttack && trait.damage && trait.damage.parts) {
       const activityId = foundry.utils.randomID();
-      
       itemData.system.activities = {
         [activityId]: {
           _id: activityId,
           type: 'attack',
-          activation: {
-            type: 'action',
-            value: 1,
-            condition: '',
-            override: false
-          },
-          consumption: {
-            targets: [],
-            scaling: {
-              allowed: false,
-              max: ''
-            },
-            spellSlot: true
-          },
-          description: {
-            chatFlavor: ''
-          },
-          duration: {
-            concentration: false,
-            value: '',
-            units: '',
-            special: '',
-            override: false
-          },
-          effects: [],
-          range: {
-            value: '',
-            units: 'touch',
-            special: '',
-            override: false
-          },
-          target: {
-            template: {
-              count: '',
-              contiguous: false,
-              type: '',
-              size: '',
-              width: '',
-              height: '',
-              units: ''
-            },
-            affects: {
-              count: '1',
-              type: 'creature',
-              choice: false,
-              special: ''
-            },
-            override: false
-          },
-          attack: {
-            ability: trait.damage.base || 'str',
-            bonus: '',
-            critical: {
-              threshold: null,
-              damage: ''
-            },
-            flat: false,
-            type: {
-              value: 'melee',
-              classification: 'weapon'
-            }
-          },
+          activation: { type: 'action', value: 1 },
+          attack: { ability: trait.damage.base || 'str', type: { value: 'melee', classification: 'natural' } },
           damage: {
-            critical: {
-              bonus: ''
-            },
             includeBase: true,
-            parts: trait.damage.parts.map(part => {
-              // Parse the damage formula (e.g., "1d6")
-              const match = part[0].match(/(\d+)d(\d+)/);
-              const number = match ? parseInt(match[1]) : 1;
-              const denomination = match ? parseInt(match[2]) : 6;
-              
-              return {
-                number: number,
-                denomination: denomination,
-                bonus: '@mod', // This adds the ability modifier
-                types: [part[1]],
-                custom: {
-                  enabled: false,
-                  formula: ''
-                },
-                scaling: {
-                  mode: '',
-                  number: null,
-                  formula: ''
-                }
-              };
-            })
-          },
-          uses: {
-            spent: 0,
-            max: '',
-            recovery: []
+            parts: trait.damage.parts.map(p => ({
+              number: parseInt(p[0].match(/(\d+)d/)?.[1] || 1),
+              denomination: parseInt(p[0].match(/d(\d+)/)?.[1] || 6),
+              bonus: '@mod',
+              types: [p[1]]
+            }))
           }
         }
       };
-      
-      console.log(`Race Importer | Added attack activity to ${trait.name}`);
-    } else {
-      console.log(`Race Importer | ${trait.name} is not an attack, no activity added`);
     }
-    
     return itemData;
   }
 
   _buildItemData(raceData) {
-    const systemType = game.settings.get('race-importer-ollama', 'systemType');
-    
-    if (systemType === 'dnd5e') {
-      return this._buildDnd5eData(raceData);
-    }
-    
-    // Default/generic structure
-    return this._buildGenericData(raceData);
-  }
-
-  _buildDnd5eData(raceData) {
-    // Build the main species item
-    const itemData = {
-      name: raceData.name,
-      type: 'race',
-      img: 'icons/svg/mystery-man.svg',
-      system: {
-        description: {
-          value: this._buildDescription(raceData),
-          chat: '',
-          unidentified: ''
-        },
-        source: {
-          book: 'Imported',
-          page: '',
-          custom: 'Chronicle Keeper - Compendium Import'
-        },
-        identifier: raceData.name.toLowerCase().replace(/\s+/g, '-'),
-        type: {
-          value: (raceData.creatureType || 'humanoid').toLowerCase(), // Must be lowercase!
-          subtype: '',
-          swarm: '',
-          custom: ''
-        },
-        movement: this._buildMovement(raceData.movement),
-        senses: this._buildSenses(raceData.senses),
-        advancement: this._buildAdvancement(raceData)
-      }
-    };
-    
-    return itemData;
-  }
-
-  _buildMovement(movement) {
-    if (!movement) return { walk: 30, units: 'ft' };
-    
-    const result = {
-      walk: movement.walk || 30,
-      units: 'ft'
-    };
-    
-    // Add special movement types if they exist
-    if (movement.climb && movement.climb > 0) result.climb = movement.climb;
-    if (movement.fly && movement.fly > 0) result.fly = movement.fly;
-    if (movement.swim && movement.swim > 0) result.swim = movement.swim;
-    if (movement.burrow && movement.burrow > 0) result.burrow = movement.burrow;
-    if (movement.hover) result.hover = true;
-    
-    return result;
-  }
-
-  _buildSenses(senses) {
-    if (!senses) return { units: 'ft' };
-    
-    const result = { units: 'ft' };
-    
-    if (senses.darkvision && senses.darkvision > 0) result.darkvision = senses.darkvision;
-    if (senses.blindsight && senses.blindsight > 0) result.blindsight = senses.blindsight;
-    if (senses.tremorsense && senses.tremorsense > 0) result.tremorsense = senses.tremorsense;
-    if (senses.truesight && senses.truesight > 0) result.truesight = senses.truesight;
-    
-    return result;
-  }
-
-  _buildAdvancement(raceData) {
-    const advancement = [];
-    
-    // Size advancement
-    if (raceData.size) {
-      const sizeConfig = {
-        _id: foundry.utils.randomID(),
-        type: 'Size',
-        level: 0,
-        configuration: {}
-      };
-      
-      if (raceData.size.options && raceData.size.options.length > 1) {
-        // Player can choose size
-        sizeConfig.configuration.sizes = raceData.size.options;
-      } else {
-        // Fixed size
-        sizeConfig.configuration.sizes = [raceData.size.value || 'med'];
-      }
-      
-      advancement.push(sizeConfig);
-    }
-    
-    // Ability Score Improvement - D&D 5e 2024 style
-    if (raceData.abilityScoreIncrease) {
-      const asi = raceData.abilityScoreIncrease;
-      
-      if (asi.type === 'flexible' && asi.options) {
-        // Flexible ability score increases (2024 rules)
-        advancement.push({
-          _id: foundry.utils.randomID(),
-          type: 'AbilityScoreImprovement',
-          level: 0,
-          configuration: {
-            points: asi.options.increases || 3,
-            cap: 2,
-            fixed: {},
-            choices: asi.options.pool || [1, 1, 1]
-          },
-          value: {
-            type: 'asi'
-          },
-          title: 'Ability Score Increase'
-        });
-      } else if (asi.fixed) {
-        // Fixed ability scores (legacy)
-        const fixed = {};
-        Object.entries(asi.fixed).forEach(([ability, value]) => {
-          if (value > 0) fixed[ability] = value;
-        });
-        
-        if (Object.keys(fixed).length > 0) {
-          advancement.push({
-            _id: foundry.utils.randomID(),
-            type: 'AbilityScoreImprovement',
-            level: 0,
-            configuration: {
-              fixed: fixed,
-              points: 0,
-              cap: 2
-            },
-            value: {},
-            title: 'Ability Score Increase'
-          });
-        }
-      }
-    }
-    
-    // Language proficiency advancement
-    if (raceData.languages && raceData.languages.value && raceData.languages.value.length > 0) {
-      advancement.push({
-        _id: foundry.utils.randomID(),
-        type: 'Trait',
-        level: 0,
-        configuration: {
-          mode: 'default',
-          allowReplacements: false,
-          grants: raceData.languages.value,
-          choices: raceData.languages.custom ? [{
-            count: 1,
-            pool: [] // Empty pool means "any language"
-          }] : []
-        },
-        value: {
-          chosen: []
-        },
-        title: 'Languages',
-        hint: raceData.languages.custom || '',
-        classRestriction: ''
-      });
-    }
-    
-    // Trait grants - create as ItemGrant advancement
-    if (raceData.traits && raceData.traits.length > 0) {
-      raceData.traits.forEach(trait => {
-        advancement.push({
-          _id: foundry.utils.randomID(),
-          type: 'ItemGrant',
-          level: 0,
-          configuration: {
-            items: [trait.name],
-            optional: false,
-            spell: null
-          },
-          value: {},
-          title: trait.name,
-          icon: '',
-          classRestriction: ''
-        });
-      });
-    }
-    
-    // Skill proficiencies
-    if (raceData.proficiencies && raceData.proficiencies.skills && raceData.proficiencies.skills.length > 0) {
-      advancement.push({
-        _id: foundry.utils.randomID(),
-        type: 'Trait',
-        level: 0,
-        configuration: {
-          mode: 'default',
-          allowReplacements: false,
-          grants: raceData.proficiencies.skills.map(skill => skill.toLowerCase()),
-          choices: []
-        },
-        value: {
-          chosen: []
-        },
-        title: 'Skill Proficiency',
-        hint: '',
-        classRestriction: ''
-      });
-    }
-    
-    return advancement;
-  }
-
-  _buildDescription(raceData) {
-    let html = `<p>${raceData.description}</p>`;
-    
-    // Add a summary of key features
-    html += `<h3>Species Features</h3>`;
-    
-    if (raceData.creatureType) {
-      html += `<p><strong>Creature Type:</strong> ${raceData.creatureType}</p>`;
-    }
-    
-    if (raceData.size) {
-      const sizeMap = {
-        'tiny': 'Tiny',
-        'sm': 'Small', 
-        'med': 'Medium',
-        'lg': 'Large',
-        'huge': 'Huge',
-        'grg': 'Gargantuan'
-      };
-      
-      if (raceData.size.options && raceData.size.options.length > 1) {
-        html += `<p><strong>Size:</strong> ${raceData.size.options.map(s => sizeMap[s] || s).join(' or ')}</p>`;
-      } else {
-        html += `<p><strong>Size:</strong> ${sizeMap[raceData.size.value] || raceData.size.value || 'Medium'}</p>`;
-      }
-    }
-    
-    if (raceData.movement) {
-      const speeds = [];
-      if (raceData.movement.walk) speeds.push(`${raceData.movement.walk} ft.`);
-      if (raceData.movement.climb) speeds.push(`climb ${raceData.movement.climb} ft.`);
-      if (raceData.movement.fly) speeds.push(`fly ${raceData.movement.fly} ft.`);
-      if (raceData.movement.swim) speeds.push(`swim ${raceData.movement.swim} ft.`);
-      if (raceData.movement.burrow) speeds.push(`burrow ${raceData.movement.burrow} ft.`);
-      if (speeds.length > 0) {
-        html += `<p><strong>Speed:</strong> ${speeds.join(', ')}</p>`;
-      }
-    }
-    
-    if (raceData.senses) {
-      const senses = [];
-      if (raceData.senses.darkvision) senses.push(`Darkvision ${raceData.senses.darkvision} ft.`);
-      if (raceData.senses.blindsight) senses.push(`Blindsight ${raceData.senses.blindsight} ft.`);
-      if (raceData.senses.tremorsense) senses.push(`Tremorsense ${raceData.senses.tremorsense} ft.`);
-      if (raceData.senses.truesight) senses.push(`Truesight ${raceData.senses.truesight} ft.`);
-      if (senses.length > 0) {
-        html += `<p><strong>Senses:</strong> ${senses.join(', ')}</p>`;
-      }
-    }
-    
-    if (raceData.languages) {
-      if (raceData.languages.value && raceData.languages.value.length > 0) {
-        const langs = raceData.languages.value.map(l => l.charAt(0).toUpperCase() + l.slice(1));
-        html += `<p><strong>Languages:</strong> ${langs.join(', ')}`;
-        if (raceData.languages.custom) {
-          html += `, ${raceData.languages.custom}`;
-        }
-        html += `</p>`;
-      }
-    }
-    
-    // Note about traits being granted
-    if (raceData.traits && raceData.traits.length > 0) {
-      html += `<p><em>This species grants ${raceData.traits.length} racial trait${raceData.traits.length > 1 ? 's' : ''}: ${raceData.traits.map(t => t.name).join(', ')}. These are added automatically when you select this species.</em></p>`;
-    }
-    
-    return html;
-  }
-
-  _buildGenericData(raceData) {
-    const description = this._buildDescription(raceData);
-    
     return {
       name: raceData.name,
       type: 'race',
       img: 'icons/svg/mystery-man.svg',
       system: {
-        description: {
-          value: description
-        }
+        description: { value: this._buildDescription(raceData) },
+        identifier: raceData.name.toLowerCase().replace(/\s+/g, '-'),
+        type: { value: (raceData.creatureType || 'humanoid').toLowerCase() },
+        movement: this._buildMovement(raceData.movement),
+        senses: this._buildSenses(raceData.senses),
+        advancement: this._buildAdvancement(raceData)
       }
     };
+  }
+
+  _buildMovement(m) {
+    if (!m) return { walk: 30, units: 'ft' };
+    const r = { walk: m.walk || 30, units: 'ft' };
+    if (m.climb) r.climb = m.climb;
+    if (m.fly) r.fly = m.fly;
+    if (m.swim) r.swim = m.swim;
+    return r;
+  }
+
+  _buildSenses(s) {
+    if (!s) return { units: 'ft' };
+    const r = { units: 'ft' };
+    if (s.darkvision) r.darkvision = s.darkvision;
+    if (s.blindsight) r.blindsight = s.blindsight;
+    return r;
+  }
+
+  _buildAdvancement(raceData) {
+    const adv = [];
+    
+    // Size
+    if (raceData.size) {
+      adv.push({
+        _id: foundry.utils.randomID(),
+        type: 'Size',
+        configuration: { sizes: raceData.size.options || ['med'] }
+      });
+    }
+    
+    // ASI
+    if (raceData.abilityScoreIncrease) {
+      adv.push({
+        _id: foundry.utils.randomID(),
+        type: 'AbilityScoreImprovement',
+        configuration: {
+          points: raceData.abilityScoreIncrease.options.increases || 3,
+          cap: 2
+        }
+      });
+    }
+    
+    // Languages
+    if (raceData.languages && raceData.languages.value) {
+      adv.push({
+        _id: foundry.utils.randomID(),
+        type: 'Trait',
+        configuration: {
+          mode: 'default',
+          grants: raceData.languages.value,
+          choices: raceData.languages.custom ? [{ count: 1, pool: [] }] : []
+        },
+        title: 'Languages',
+        hint: raceData.languages.custom
+      });
+    }
+    
+    // Traits (ItemGrant)
+    if (raceData.traits) {
+      raceData.traits.forEach(t => {
+        adv.push({
+          _id: foundry.utils.randomID(),
+          type: 'ItemGrant',
+          configuration: { items: [t.name] }, 
+          title: t.name
+        });
+      });
+    }
+    
+    // Specific Skills
+    if (raceData.proficiencies.skills && raceData.proficiencies.skills.length > 0) {
+       adv.push({
+        _id: foundry.utils.randomID(),
+        type: 'Trait',
+        configuration: {
+          mode: 'default',
+          grants: raceData.proficiencies.skills.map(s => s.toLowerCase())
+        },
+        title: 'Skill Proficiency'
+      });
+    }
+
+    // FIXED: Skill Choices (Auto-detected via regex or AI)
+    if (raceData.proficiencies.skillCount > 0) {
+       const allSkills = [
+         "skills:acr", "skills:ani", "skills:arc", "skills:ath", 
+         "skills:dec", "skills:his", "skills:ins", "skills:itm", 
+         "skills:inv", "skills:med", "skills:nat", "skills:prc", 
+         "skills:prf", "skills:per", "skills:rel", "skills:slt", 
+         "skills:ste", "skills:sur"
+       ];
+
+       adv.push({
+        _id: foundry.utils.randomID(),
+        type: 'Trait',
+        configuration: {
+          mode: 'default',
+          allowReplacements: true, 
+          choices: [{ 
+            count: raceData.proficiencies.skillCount,
+            pool: allSkills 
+          }]
+        },
+        title: raceData.proficiencies.traitName || 'Skill Choices',
+        hint: `Choose any ${raceData.proficiencies.skillCount} skill proficiencies`
+      });
+    }
+    
+    return adv;
+  }
+
+  _buildDescription(data) {
+    return `<p>${data.description}</p>`;
   }
 
   _showStatus(type, message) {
     const status = this.element.find('.race-importer-status');
     status.removeClass('success error info').addClass(type).addClass('visible');
     status.text(message);
-    
-    if (type === 'success' || type === 'error') {
-      setTimeout(() => {
-        status.removeClass('visible');
-      }, 5000);
-    }
+    if (type !== 'info') setTimeout(() => status.removeClass('visible'), 5000);
   }
 }
