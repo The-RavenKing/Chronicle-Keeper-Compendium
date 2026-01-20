@@ -1,7 +1,8 @@
 import { SpeciesStrategy } from './strategies/species-strategy.js';
 import { ClassStrategy } from './strategies/class-strategy.js';
+import { SubclassStrategy } from './strategies/subclass-strategy.js'; // Added Subclass
 import { SpellStrategy } from './strategies/spell-strategy.js';
-import { MonsterStrategy } from './strategies/monster-strategy.js'; // Added Monster Strategy
+import { MonsterStrategy } from './strategies/monster-strategy.js';
 
 export class RaceImporterApp extends Application {
   constructor(options = {}) {
@@ -12,8 +13,9 @@ export class RaceImporterApp extends Application {
     this.strategies = {
       'species': new SpeciesStrategy(),
       'class': new ClassStrategy(),
+      'subclass': new SubclassStrategy(), // Added Subclass Strategy
       'spell': new SpellStrategy(),
-      'monster': new MonsterStrategy() // Added Monster Strategy
+      'monster': new MonsterStrategy()
     };
     
     // Default to species
@@ -46,8 +48,9 @@ export class RaceImporterApp extends Application {
     data.importTypes = [
       { value: 'species', label: 'Race / Species' },
       { value: 'class', label: 'Class' },
+      { value: 'subclass', label: 'Subclass' }, // Added Option
       { value: 'spell', label: 'Spell' },
-      { value: 'monster', label: 'Monster / NPC' } // Added option
+      { value: 'monster', label: 'Monster / NPC' }
     ];
     
     // Get list of Item compendiums for the settings dropdown

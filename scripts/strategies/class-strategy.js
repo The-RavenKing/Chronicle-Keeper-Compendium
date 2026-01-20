@@ -7,37 +7,24 @@ export class ClassStrategy extends BaseStrategy {
   }
 
   getPrompt(content) {
-    return `Extract D&D 5e CLASS information from the text below.
+    return `Extract D&D 5e CLASS information.
 
 Required JSON Structure:
 {
   "name": "Class Name",
-  "description": "Class flavor text",
+  "description": "Flavor text...",
   "hitDie": "d8",
   "savingThrows": ["dex", "int"],
-  "skills": {
-    "count": 2,
-    "options": ["acr", "ste", "perc"]
-  },
+  "skills": { "count": 2, "options": ["acr", "ste", "perc"] },
   "features": [
-    {
-      "name": "Sneak Attack",
-      "description": "Beginning at 1st level...",
-      "level": 1
-    },
-    {
-      "name": "Cunning Action",
-      "description": "Starting at 2nd level...",
-      "level": 2
-    }
+    { "name": "Feature Name", "description": "...", "level": 1 }
   ]
 }
 
 RULES:
-1. Extract ALL class features mentioned in the text with their level.
+1. ONLY extract features EXPLICITLY found in the text. Do NOT add example features like Sneak Attack unless they are in the text.
 2. Hit Die should be d6, d8, d10, or d12.
-3. Saving throws should be abbreviated (str, dex, con, int, wis, cha).
-4. Skill codes: acr, ani, arc, ath, dec, his, ins, itm, inv, med, nat, prc, prf, per, rel, slt, ste, sur.
+3. Saving throws abbreviated (str, dex, con...).
 
 SOURCE TEXT:
 ${content}`;
@@ -51,13 +38,14 @@ ${content}`;
   }
 
   async create(data) {
-    const packId = game.settings.get('chronicle-keeper-compendium', 'targetCompendium');
-    const pack = game.packs.get(packId);
-    if (!pack) throw new Error("Target compendium not found");
+    // FIX: Route to correct compendiums
+    const classPack = game.packs.get("world.chronicle-keeper-classes");
+    const featurePack = game.packs.get("world.chronicle-keeper-features");
 
-    // 1. Create Feature Items first
-    const featureMap = new Map(); // Name -> UUID
-    
+    if (!classPack || !featurePack) throw new Error("Compendiums not found.");
+
+    // 1. Create Features
+    const featureMap = new Map();
     for (const feature of data.features) {
       const featData = {
         name: feature.name,
@@ -65,77 +53,65 @@ ${content}`;
         img: 'icons/svg/book.svg',
         system: {
           description: { value: `<p>${feature.description}</p>` },
-          source: { custom: `${data.name} Class Feature` },
+          source: { custom: `${data.name} Feature` },
           type: { value: 'class', subtype: '' },
           requirements: `${data.name} ${feature.level}`
         }
       };
-      
-      const created = await pack.documentClass.create(featData, { pack: pack.collection });
+      const created = await featurePack.documentClass.create(featData, { pack: featurePack.collection });
       featureMap.set(feature.name, { uuid: created.uuid, level: feature.level });
     }
 
-    // 2. Build Advancement for Features
+    // 2. Build Advancement
     const advancements = [];
-    
-    // Group features by level
     const featuresByLevel = {};
-    featureMap.forEach((val, name) => {
-      if (!featuresByLevel[val.level]) featuresByLevel[val.level] = [];
-      featuresByLevel[val.level].push(val.uuid);
+    featureMap.forEach((val) => {
+        if (!featuresByLevel[val.level]) featuresByLevel[val.level] = [];
+        featuresByLevel[val.level].push(val.uuid);
     });
 
-    // Create Grant advancements for each level
     for (const [level, uuids] of Object.entries(featuresByLevel)) {
-      advancements.push({
-        _id: foundry.utils.randomID(),
-        type: 'ItemGrant',
-        configuration: { items: uuids },
-        level: parseInt(level),
-        title: 'Class Features'
-      });
+        advancements.push({
+            _id: foundry.utils.randomID(),
+            type: 'ItemGrant',
+            configuration: { items: uuids },
+            level: parseInt(level),
+            title: 'Class Features'
+        });
     }
 
-    // Add Hit Points advancement
+    // Hit Points
     advancements.push({
-      _id: foundry.utils.randomID(),
-      type: 'HitPoints',
-      configuration: { denomination: parseInt(data.hitDie.replace('d', '')) },
-      title: 'Hit Points'
+        _id: foundry.utils.randomID(),
+        type: 'HitPoints',
+        configuration: { denomination: parseInt(data.hitDie.replace('d', '')) },
+        title: 'Hit Points'
     });
 
-    // Add Saving Throws advancement
-    if (data.savingThrows && data.savingThrows.length > 0) {
-      advancements.push({
-        _id: foundry.utils.randomID(),
-        type: 'Trait',
-        configuration: { 
-          mode: 'default', 
-          grants: data.savingThrows.map(s => `saves:${s}`) 
-        },
-        title: 'Saving Throws'
-      });
+    // Saves
+    if (data.savingThrows?.length > 0) {
+        advancements.push({
+            _id: foundry.utils.randomID(),
+            type: 'Trait',
+            configuration: { mode: 'default', grants: data.savingThrows.map(s => `saves:${s}`) },
+            title: 'Saving Throws'
+        });
     }
 
-    // Add Skill Choices
-    if (data.skills && data.skills.count > 0) {
-      advancements.push({
-        _id: foundry.utils.randomID(),
-        type: 'Trait',
-        configuration: {
-          mode: 'default',
-          allowReplacements: false,
-          choices: [{
-            count: data.skills.count,
-            pool: data.skills.options.map(s => `skills:${s}`)
-          }]
-        },
-        title: 'Skills',
-        hint: `Choose ${data.skills.count} skills`
-      });
+    // Skills
+    if (data.skills?.count > 0) {
+        advancements.push({
+            _id: foundry.utils.randomID(),
+            type: 'Trait',
+            configuration: {
+                mode: 'default',
+                choices: [{ count: data.skills.count, pool: data.skills.options.map(s => `skills:${s}`) }]
+            },
+            title: 'Skills'
+        });
     }
 
-    // 3. Create the Main Class Item
+    // 3. Create Class Item
     const itemData = {
       name: data.name,
       type: 'class',
@@ -148,7 +124,7 @@ ${content}`;
       }
     };
 
-    await pack.documentClass.create(itemData, { pack: pack.collection });
-    ui.notifications.info(`Created Class: ${data.name} with ${data.features.length} features!`);
+    await classPack.documentClass.create(itemData, { pack: classPack.collection });
+    ui.notifications.info(`Created Class: ${data.name}`);
   }
 }
