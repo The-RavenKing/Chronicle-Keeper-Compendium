@@ -1,6 +1,6 @@
 import { SpeciesStrategy } from './strategies/species-strategy.js';
 import { ClassStrategy } from './strategies/class-strategy.js';
-import { SubclassStrategy } from './strategies/subclass-strategy.js'; // Added Subclass
+import { SubclassStrategy } from './strategies/subclass-strategy.js';
 import { SpellStrategy } from './strategies/spell-strategy.js';
 import { MonsterStrategy } from './strategies/monster-strategy.js';
 
@@ -13,7 +13,7 @@ export class RaceImporterApp extends Application {
     this.strategies = {
       'species': new SpeciesStrategy(),
       'class': new ClassStrategy(),
-      'subclass': new SubclassStrategy(), // Added Subclass Strategy
+      'subclass': new SubclassStrategy(),
       'spell': new SpellStrategy(),
       'monster': new MonsterStrategy()
     };
@@ -48,7 +48,7 @@ export class RaceImporterApp extends Application {
     data.importTypes = [
       { value: 'species', label: 'Race / Species' },
       { value: 'class', label: 'Class' },
-      { value: 'subclass', label: 'Subclass' }, // Added Option
+      { value: 'subclass', label: 'Subclass' },
       { value: 'spell', label: 'Spell' },
       { value: 'monster', label: 'Monster / NPC' }
     ];

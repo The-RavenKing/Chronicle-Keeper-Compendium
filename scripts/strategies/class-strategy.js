@@ -7,24 +7,32 @@ export class ClassStrategy extends BaseStrategy {
   }
 
   getPrompt(content) {
-    return `Extract D&D 5e CLASS information.
+    return `Extract D&D 5e CLASS information from the text below.
 
 Required JSON Structure:
 {
   "name": "Class Name",
-  "description": "Flavor text...",
+  "description": "Class flavor text",
   "hitDie": "d8",
   "savingThrows": ["dex", "int"],
-  "skills": { "count": 2, "options": ["acr", "ste", "perc"] },
+  "skills": {
+    "count": 2,
+    "options": ["acr", "ste", "perc"]
+  },
   "features": [
-    { "name": "Feature Name", "description": "...", "level": 1 }
+    {
+      "name": "Feature Name",
+      "description": "Beginning at 1st level...",
+      "level": 1
+    }
   ]
 }
 
 RULES:
-1. ONLY extract features EXPLICITLY found in the text. Do NOT add example features like Sneak Attack unless they are in the text.
+1. Extract ALL class features mentioned in the text with their level.
 2. Hit Die should be d6, d8, d10, or d12.
-3. Saving throws abbreviated (str, dex, con...).
+3. Saving throws should be abbreviated (str, dex, con, int, wis, cha).
+4. Skill codes: acr, ani, arc, ath, dec, his, ins, itm, inv, med, nat, prc, prf, per, rel, slt, ste, sur.
 
 SOURCE TEXT:
 ${content}`;
@@ -38,14 +46,18 @@ ${content}`;
   }
 
   async create(data) {
-    // FIX: Route to correct compendiums
+    // 1. Define Target Packs
     const classPack = game.packs.get("world.chronicle-keeper-classes");
     const featurePack = game.packs.get("world.chronicle-keeper-features");
 
-    if (!classPack || !featurePack) throw new Error("Compendiums not found.");
+    // Fallback if packs don't exist
+    if (!classPack || !featurePack) {
+        throw new Error("Required compendiums not found. Please re-initialize module.");
+    }
 
-    // 1. Create Features
-    const featureMap = new Map();
+    // 2. Create Features in the FEATURES pack
+    const featureMap = new Map(); 
+    
     for (const feature of data.features) {
       const featData = {
         name: feature.name,
@@ -53,16 +65,17 @@ ${content}`;
         img: 'icons/svg/book.svg',
         system: {
           description: { value: `<p>${feature.description}</p>` },
-          source: { custom: `${data.name} Feature` },
+          source: { custom: `${data.name} Class Feature` },
           type: { value: 'class', subtype: '' },
           requirements: `${data.name} ${feature.level}`
         }
       };
+      
       const created = await featurePack.documentClass.create(featData, { pack: featurePack.collection });
       featureMap.set(feature.name, { uuid: created.uuid, level: feature.level });
     }
 
-    // 2. Build Advancement
+    // 3. Build Advancement
     const advancements = [];
     const featuresByLevel = {};
     featureMap.forEach((val) => {
@@ -80,7 +93,7 @@ ${content}`;
         });
     }
 
-    // Hit Points
+    // Add Hit Points
     advancements.push({
         _id: foundry.utils.randomID(),
         type: 'HitPoints',
@@ -88,30 +101,38 @@ ${content}`;
         title: 'Hit Points'
     });
 
-    // Saves
-    if (data.savingThrows?.length > 0) {
+    // Add Saves
+    if (data.savingThrows && data.savingThrows.length > 0) {
         advancements.push({
             _id: foundry.utils.randomID(),
             type: 'Trait',
-            configuration: { mode: 'default', grants: data.savingThrows.map(s => `saves:${s}`) },
+            configuration: { 
+                mode: 'default', 
+                grants: data.savingThrows.map(s => `saves:${s}`) 
+            },
             title: 'Saving Throws'
         });
     }
 
-    // Skills
-    if (data.skills?.count > 0) {
+    // Add Skills
+    if (data.skills && data.skills.count > 0) {
         advancements.push({
             _id: foundry.utils.randomID(),
             type: 'Trait',
             configuration: {
                 mode: 'default',
-                choices: [{ count: data.skills.count, pool: data.skills.options.map(s => `skills:${s}`) }]
+                allowReplacements: false,
+                choices: [{
+                    count: data.skills.count,
+                    pool: data.skills.options.map(s => `skills:${s}`)
+                }]
             },
-            title: 'Skills'
+            title: 'Skills',
+            hint: `Choose ${data.skills.count} skills`
         });
     }
 
-    // 3. Create Class Item
+    // 4. Create Class Item in the CLASSES pack
     const itemData = {
       name: data.name,
       type: 'class',
@@ -125,6 +146,6 @@ ${content}`;
     };
 
     await classPack.documentClass.create(itemData, { pack: classPack.collection });
-    ui.notifications.info(`Created Class: ${data.name}`);
+    ui.notifications.info(`Created Class: ${data.name} with ${data.features.length} features!`);
   }
 }

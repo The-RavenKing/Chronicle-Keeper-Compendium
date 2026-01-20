@@ -7,27 +7,26 @@ export class SubclassStrategy extends BaseStrategy {
   }
 
   getPrompt(content) {
-    return `Extract D&D 5e SUBCLASS information.
+    return `Extract SUBCLASS information from the text below.
 
 Required JSON Structure:
 {
-  "name": "Life Domain",
-  "baseClass": "Cleric",
-  "description": "Flavor text...",
+  "name": "Name of the Subclass",
+  "baseClass": "Name of the Base Class",
+  "description": "The flavor text description...",
   "features": [
-    { "name": "Disciple of Life", "description": "...", "level": 1 },
-    { "name": "Channel Divinity", "description": "...", "level": 2 }
+    { "name": "Name of Feature", "description": "Full text of feature...", "level": 1 },
+    { "name": "Another Feature", "description": "...", "level": 6 }
   ],
   "spells": [
-    { "name": "Bless", "level": 1 },
-    { "name": "Cure Wounds", "level": 1 }
+    { "name": "Spell Name", "level": 1 }
   ]
 }
 
 RULES:
-1. ONLY extract features found in the source text. Do NOT invent features.
+1. Extract the ACTUAL names from the text.
 2. If the text lists an "Expanded Spell List", include those in "spells".
-3. Extract the "Base Class" name if present (e.g. Warlock, Cleric).
+3. Extract features with their specific levels (3rd Level, 6th Level, etc).
 
 SOURCE TEXT:
 ${content}`;
@@ -37,14 +36,13 @@ ${content}`;
     const subclassPack = game.packs.get("world.chronicle-keeper-subclasses");
     const featurePack = game.packs.get("world.chronicle-keeper-features");
 
-    // Fallback logic if packs are missing
     if (!subclassPack || !featurePack) {
         ui.notifications.error("Missing compendiums! Please re-initialize module.");
         return;
     }
 
     // 1. Create Features
-    const featureUuids = {}; // Level -> [UUIDs]
+    const featureUuids = {}; 
     
     for (const feat of data.features || []) {
       const featItem = {
@@ -64,7 +62,7 @@ ${content}`;
       featureUuids[feat.level].push(created.uuid);
     }
 
-    // 2. Build Advancement (Grant Features)
+    // 2. Build Advancement
     const advancement = [];
     for (const [level, uuids] of Object.entries(featureUuids)) {
       advancement.push({
@@ -84,7 +82,7 @@ ${content}`;
       system: {
         description: { value: `<p>${data.description}</p>` },
         identifier: data.name.toLowerCase().replace(/\s+/g, '-'),
-        classIdentifier: data.baseClass?.toLowerCase().replace(/\s+/g, '-') || '',
+        classIdentifier: data.baseClass?.toLowerCase().replace(/\s+/g, '-') || 'warlock',
         advancement: advancement
       }
     };
