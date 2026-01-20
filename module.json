@@ -1,8 +1,8 @@
 {
   "id": "chronicle-keeper-compendium",
-  "title": "Chronicle Keeper - Compendium Importer",
+  "title": "Chronicle Keeper Compendium",
   "description": "Import races/species from web URLs or text using Ollama AI.",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "compatibility": {
     "minimum": "11",
     "verified": "13"

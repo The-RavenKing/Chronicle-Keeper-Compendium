@@ -4,7 +4,7 @@ import { RaceImporterApp } from './race-importer-app.js';
 Hooks.once('init', () => {
   console.log('Chronicle Keeper | Initializing');
   
-  // Register module settings using the NEW ID
+  // Register module settings
   game.settings.register('chronicle-keeper-compendium', 'ollamaUrl', {
     name: 'Ollama Server URL',
     hint: 'The URL where your Ollama server is running (e.g., http://localhost:11434)',
