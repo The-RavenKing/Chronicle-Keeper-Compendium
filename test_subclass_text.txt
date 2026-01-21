@@ -1,0 +1,183 @@
+Base Class:
+Warlock
+Patron Description
+The Faceless One is an ancient archfey who exists in the spaces between identities, a master of masks and misdirection who has forgotten their own true face. They grant power to those who seek to walk unseen among mortals, to become anyone and no one simultaneously. This patron embodies the liminal space between truth and deception, reality and illusion.
+
+Expanded Spell List
+The Faceless One lets you choose from an expanded list of spells when you learn a warlock spell.
+
+Warlock Level	Spells
+1st	disguise self, silent image
+2nd	pass without trace, detect thoughts
+3rd	nondetection, major image
+4th	greater invisibility, polymorph
+5th	modify memory, seeming
+Fey Presence (3rd Level)
+Starting at 3rd level, your patron grants you the ability to project an otherworldly presence. As an action, you can cause each creature in a 10-foot cube originating from you to make a Wisdom saving throw against your warlock spell save DC. On a failed save, creatures are charmed or frightened by you (your choice) until the end of your next turn.
+
+Additionally, you gain proficiency in the Deception skill. If you are already proficient in it, you add double your proficiency bonus to checks you make with it.
+
+Once you use this feature, you can't use it again until you finish a short or long rest.
+
+Perfect Facade (3rd Level)
+Also at 3rd level, The Faceless One grants you supernatural mastery over disguise and deception. You gain the following benefits:
+
+Enhanced Disguise: When you cast disguise self or use a disguise kit, your disguises are supernaturally convincing. Creatures have disadvantage on Investigation checks to see through your disguises.
+Deceptive Advantage: You have advantage on Deception checks when impersonating another person or concealing your true nature.
+Ethereal Awareness: You can sense when you are being magically observed or detected. When a creature uses divination magic to locate or scry on you, you become aware of the attempt (though not the source).
+Stolen Visage (6th Level)
+At 6th level, you can temporarily steal aspects of others' identities. When you successfully hit a humanoid with your eldritch blast or another warlock spell, you can use your reaction to capture an "echo" of their essence. You can store a number of echoes equal to your proficiency bonus.
+
+As an action, you can expend an echo to gain one of the following benefits for 1 hour:
+
+Mimicked Skill: Gain proficiency in one skill the target was proficient in
+Borrowed Feature: Gain one class feature of 3rd level or lower that the target possessed (DM's discretion on what's appropriate)
+Ethereal Memory: Gain advantage on all Intelligence-based checks related to the target's knowledge or experiences
+You regain all expended echoes when you finish a long rest.
+
+Misty Escape (6th Level)
+Starting at 6th level, you can vanish in a silvery mist in response to harm. When you take damage, you can use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. You remain invisible until the start of your next turn or until you attack or cast a spell.
+
+Once you use this feature, you can't use it again until you finish a short or long rest.
+
+Veil of Faces (10th Level)
+At 10th level, your connection to The Faceless One allows you to maintain multiple false identities simultaneously. You gain the following abilities:
+
+Phantom Identity: You can cast disguise self at will without expending a spell slot. When you do so, you can also mimic the general mannerisms and voice of any humanoid you've observed for at least 1 minute.
+False Aura: Spells and abilities that detect your creature type, alignment, or magical nature show false information of your choice instead of your true nature.
+Ethereal Shroud: As a bonus action, you can become partially ethereal until the start of your next turn. While ethereal, you have resistance to all damage except force damage, and you can move through other creatures and objects as if they were difficult terrain. You take 5 force damage if you end your turn inside an object.
+Beguiling Defenses: You are immune to the Charmed condition. In addition, immediately after a creature you can see hits you with an attack, you can take a Reaction to reduce the damage by half (round down) and force the attacker to make a DC {{savedc:cha}} Wis. saving throw. On a failed save, the attacker takes Psychic damage equal to the damage you take. Once used, you can’t use this Reaction again unless you expend a Pact Magic spell slot to restore your use of it.
+You can use the Ethereal Shroud feature a number of times equal to your proficiency bonus, and you regain all expended uses when you finish a long rest.
+
+Master of None (14th Level)
+At 14th level, The Faceless One grants you the ultimate disguise—the ability to perfectly emulate other adventurers. When you finish a long rest, you can choose to "forget" your warlock identity and temporarily gain the abilities of another class:
+
+Choose a class of your level or lower
+You gain all class features of that class up to your current warlock level
+You retain your hit points, proficiency bonus, and ability scores
+You lose access to all warlock features except this one while transformed
+Your spell slots become those of the chosen class (if applicable)
+This transformation lasts until you finish another long rest or choose to end it early (no action required)
+Additionally, while in this false identity:
+
+You are immune to divination magic that would reveal your true class or nature
+Creatures who knew you as a warlock must succeed on a Wisdom (Insight) check against your spell save DC to recognize you
+You can speak with The Faceless One telepathically across any distance
+Once you use this feature, you can't use it again until you finish a long rest.
+
+Ethereal Techniques
+Throughout your levels, you develop the following ethereal techniques that can enhance your abilities:
+
+Phantom Step (Available at 6th level)
+When you use your Misty Escape, you can choose to leave behind a brief afterimage that lasts until the start of your next turn. If a creature moves within 5 feet of the afterimage, it must make a Wisdom saving throw or be frightened until the end of its next turn.
+
+Soul Echo (Available at 10th level)
+When you use Stolen Visage, you can choose to create a "soul echo" instead of the normal benefits. The soul echo appears as a translucent copy of the target and can perform simple tasks or deliver messages. It lasts for 10 minutes and has the statistics of an unseen servant, but it appears as the creature whose echo you captured.
+
+Identity Crisis (Available at 14th level)
+When using Master of None, you can maintain fragments of your warlock identity. Choose one warlock invocation you know—you retain access to this invocation even while transformed into another class.
+
+Roleplay Considerations
+Warlocks of The Faceless One often struggle with questions of identity and truth. Consider how your character deals with:
+
+The temptation to live entirely through false identities
+Maintaining relationships when your true self is fluid
+The gradual loss of connection to your original identity
+The patron's alien perspective on mortal concepts of "self"
+The Faceless One communicates through reflections, dreams of other lives, and whispers in voices that aren't your own. They value cleverness, adaptability, and the art of becoming what others need to see.
+
+ 
+
+ 
+
+ 
+
+
+Level 3: Facelessone Archfey Spells
+The Faceless One lets you choose from an expanded list of spells when you learn a warlock spell.
+
+Warlock Level	Spells
+1st	disguise self, silent image
+2nd	pass without trace, detect thoughts
+3rd	nondetection, major image
+4th	greater invisibility, polymorph
+5th	modify memory, seeming
+ 
+
+
+Level 3: Fey Presence
+Starting at 3rd level, your patron grants you the ability to project an otherworldly presence. As an action, you can cause each creature in a 10-foot cube originating from you to make a Wisdom saving throw against your warlock spell save DC. On a failed save, creatures are charmed or frightened by you (your choice) until the end of your next turn.
+
+Additionally, you gain proficiency in the Deception skill. If you are already proficient in it, you add double your proficiency bonus to checks you make with it.
+
+Once you use this feature, you can't use it again until you finish a short or long rest.
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+Level 6: Misty Escape
+You can cast Misty Step as a Reaction in response to taking damage.
+
+In addition, the following effects are now among your Steps of the Fey options.
+
+Disappearing Step. You have the Invisible condition until the start of your next turn or until immediately after you make an attack roll, deal damage, or cast a spell.
+
+Dreadful Step. Creatures within 5 feet of the space you left or the space you appear in (your choice) must succeed on a Wisdom saving throw against your spell save DC or take 2d10 Psychic damage.
+
+Stolen Visage
+At 6th level, you can temporarily steal aspects of others' identities. When you successfully hit a humanoid with your eldritch blast or another warlock spell, you can use your reaction to capture an "echo" of their essence. You can store a number of echoes equal to your proficiency bonus.
+
+As an action, you can expend an echo to gain one of the following benefits for 1 hour:
+
+Mimicked Skill: Gain proficiency in one skill the target was proficient in
+Borrowed Feature: Gain one class feature of 3rd level or lower that the target possessed (DM's discretion on what's appropriate)
+Ethereal Memory: Gain advantage on all Intelligence-based checks related to the target's knowledge or experiences
+You regain all expended echoes when you finish a long rest.
+
+ 
+
+
+Level 10: Veil of Faces
+At 10th level, your connection to The Faceless One allows you to maintain multiple false identities simultaneously. You gain the following abilities:
+
+Phantom Identity: You can cast disguise self at will without expending a spell slot. When you do so, you can also mimic the general mannerisms and voice of any humanoid you've observed for at least 1 minute.
+False Aura: Spells and abilities that detect your creature type, alignment, or magical nature show false information of your choice instead of your true nature.
+Ethereal Shroud: As a bonus action, you can become partially ethereal until the start of your next turn. While ethereal, you have resistance to all damage except force damage, and you can move through other creatures and objects as if they were difficult terrain. You take 5 force damage if you end your turn inside an object.
+Beguiling Defenses: You are immune to the Charmed condition. In addition, immediately after a creature you can see hits you with an attack, you can take a Reaction to reduce the damage by half (round down) and force the attacker to make a DC {{savedc:cha}} Wis. saving throw. On a failed save, the attacker takes Psychic damage equal to the damage you take. Once used, you can’t use this Reaction again unless you expend a Pact Magic spell slot to restore your use of it.
+You can use the Ethereal Shroud feature a number of times equal to your proficiency bonus, and you regain all expended uses when you finish a long rest.
+
+
+Level 14: Master of None
+The Faceless One grants you the ultimate disguise—the ability to perfectly emulate other adventurers. When you finish a long rest, you can choose to "forget" your warlock identity and temporarily gain the abilities of another class:
+
+Choose a class of your level or lower
+You gain all class features of that class up to your current warlock level
+You retain your hit points, proficiency bonus, and ability scores
+You lose access to all warlock features except this one while transformed
+Your spell slots become those of the chosen class (if applicable)
+This transformation lasts until you finish another long rest or choose to end it early (no action required)
+Additionally, while in this false identity:
+
+You are immune to divination magic that would reveal your true class or nature
+Creatures who knew you as a warlock must succeed on a Wisdom (Insight) check against your spell save DC to recognize you
+You can speak with The Faceless One telepathically across any distance
+Once you use this feature, you can't use it again until five days or five long rests have passed.
+
+ 
+
+
+Ethereal Mastery
+Phantom Step (Available at 6th level)
+When you use your Misty Escape, you can choose to leave behind a brief afterimage that lasts until the start of your next turn. If a creature moves within 5 feet of the afterimage, it must make a Wisdom saving throw or be frightened until the end of its next turn.
+
+Soul Echo (Available at 10th level)
+When you use Stolen Visage, you can choose to create a "soul echo" instead of the normal benefits. The soul echo appears as a translucent copy of the target and can perform simple tasks or deliver messages. It lasts for 10 minutes and has the statistics of an unseen servant, but it appears as the creature whose echo you captured.
+
+Identity Crisis (Available at 14th level)
+When using Master of None, you can maintain fragments of your warlock identity. Choose one warlock invocation you know—you retain access to this invocation even while transformed into another class.

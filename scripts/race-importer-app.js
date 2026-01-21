@@ -1,6 +1,7 @@
 import { SpeciesStrategy } from './strategies/species-strategy.js';
 import { ClassStrategy } from './strategies/class-strategy.js';
 import { SubclassStrategy } from './strategies/subclass-strategy.js';
+import { FeatureStrategy } from './strategies/feature-strategy.js';
 import { SpellStrategy } from './strategies/spell-strategy.js';
 import { MonsterStrategy } from './strategies/monster-strategy.js';
 
@@ -8,16 +9,17 @@ export class RaceImporterApp extends Application {
   constructor(options = {}) {
     super(options);
     this.activeTab = 'text';
-    
+
     // Initialize available strategies
     this.strategies = {
       'species': new SpeciesStrategy(),
       'class': new ClassStrategy(),
       'subclass': new SubclassStrategy(),
+      'feature': new FeatureStrategy(),
       'spell': new SpellStrategy(),
       'monster': new MonsterStrategy()
     };
-    
+
     // Default to species
     this.currentStrategy = this.strategies['species'];
   }
@@ -38,21 +40,22 @@ export class RaceImporterApp extends Application {
 
   getData() {
     const data = super.getData();
-    
+
     // Retrieve settings
     data.ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');
     data.ollamaModel = game.settings.get('chronicle-keeper-compendium', 'ollamaModel');
     data.systemType = game.settings.get('chronicle-keeper-compendium', 'systemType');
-    
+
     // Populate the dropdown with all supported types
     data.importTypes = [
       { value: 'species', label: 'Race / Species' },
       { value: 'class', label: 'Class' },
       { value: 'subclass', label: 'Subclass' },
+      { value: 'feature', label: 'Class Feature / Feat' },
       { value: 'spell', label: 'Spell' },
       { value: 'monster', label: 'Monster / NPC' }
     ];
-    
+
     // Get list of Item compendiums for the settings dropdown
     data.compendiums = game.packs
       .filter(pack => pack.documentName === 'Item')
@@ -60,26 +63,26 @@ export class RaceImporterApp extends Application {
         id: pack.collection,
         name: pack.title
       }));
-    
+
     data.selectedCompendium = game.settings.get('chronicle-keeper-compendium', 'targetCompendium');
     data.activeTab = this.activeTab;
-    
+
     return data;
   }
 
   activateListeners(html) {
     super.activateListeners(html);
-    
+
     // Tab Navigation
     html.find('.race-importer-tab').click(this._onTabClick.bind(this));
-    
+
     // Strategy Switcher (Dropdown)
     html.find('#import-type-select').change(this._onTypeChange.bind(this));
 
     // Main Action Buttons
     html.find('#import-text-btn').click(this._onImportFromText.bind(this));
     html.find('#test-connection-btn').click(this._onTestConnection.bind(this));
-    
+
     // Settings Changes
     html.find('#ollama-url').change(this._onSettingChange.bind(this));
     html.find('#ollama-model').change(this._onSettingChange.bind(this));
@@ -95,7 +98,7 @@ export class RaceImporterApp extends Application {
     const tab = $(event.currentTarget).data('tab');
     this.activeTab = tab;
     const html = this.element;
-    
+
     // Visual tab switching
     html.find('.race-importer-tab').removeClass('active');
     html.find(`.race-importer-tab[data-tab="${tab}"]`).addClass('active');
@@ -116,36 +119,36 @@ export class RaceImporterApp extends Application {
   async _onImportFromText(event) {
     event.preventDefault();
     const content = this.element.find('#race-text').val().trim();
-    if (!content) { 
-      ui.notifications.warn('Please enter information to import.'); 
-      return; 
+    if (!content) {
+      ui.notifications.warn('Please enter information to import.');
+      return;
     }
-    
+
     const button = $(event.currentTarget);
     button.prop('disabled', true);
-    
+
     try {
       this._showStatus('info', `Parsing ${this.currentStrategy.key} with Ollama AI...`);
-      
+
       // 1. Get the specific prompt for the current strategy
       const prompt = this.currentStrategy.getPrompt(content);
-      
+
       // 2. Send prompt to Ollama (Generic logic)
       const jsonData = await this._callOllama(prompt);
-      
+
       // 3. Validate data using the strategy's rules
       const validatedData = this.currentStrategy.validate(jsonData);
-      
+
       // 4. Create the items in Foundry using the strategy's logic
       this._showStatus('info', "Creating Foundry document...");
       await this.currentStrategy.create(validatedData);
-      
+
       this._showStatus('success', `Done!`);
       // ui.notifications.info is handled inside some strategies, but good to have a fallback here if needed
-      if (!validatedData.suppressNotification) { 
-          ui.notifications.info(`✅ Successfully imported ${validatedData.name}!`);
+      if (!validatedData.suppressNotification) {
+        ui.notifications.info(`✅ Successfully imported ${validatedData.name}!`);
       }
-      
+
     } catch (error) {
       console.error('Import error:', error);
       ui.notifications.error(`Import Error: ${error.message}`);
@@ -159,10 +162,10 @@ export class RaceImporterApp extends Application {
     event.preventDefault();
     const button = $(event.currentTarget);
     const ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');
-    
+
     button.prop('disabled', true);
     ui.notifications.info('Testing connection to Ollama...');
-    
+
     try {
       const response = await fetch(`${ollamaUrl}/api/tags`);
       if (response.ok) {
@@ -187,7 +190,7 @@ export class RaceImporterApp extends Application {
       'ollama-model': 'ollamaModel',
       'target-compendium': 'targetCompendium'
     };
-    
+
     if (settingMap[setting]) {
       await game.settings.set('chronicle-keeper-compendium', settingMap[setting], value);
     }
@@ -200,21 +203,22 @@ export class RaceImporterApp extends Application {
   async _callOllama(prompt) {
     const ollamaUrl = game.settings.get('chronicle-keeper-compendium', 'ollamaUrl');
     const ollamaModel = game.settings.get('chronicle-keeper-compendium', 'ollamaModel');
-    
+
     const response = await fetch(`${ollamaUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        model: ollamaModel, 
-        prompt: prompt, 
-        stream: false, 
-        format: 'json' 
+      body: JSON.stringify({
+        model: ollamaModel,
+        prompt: prompt,
+        stream: false,
+        format: 'json'
       })
     });
-    
+
     if (!response.ok) throw new Error(`Ollama API error: ${response.status}`);
     const result = await response.json();
-    
+    console.log("Chronicle Keeper | RAW LLM RESPONSE:", result.response); // Debugging
+
     try {
       return JSON.parse(result.response);
     } catch (e) {
