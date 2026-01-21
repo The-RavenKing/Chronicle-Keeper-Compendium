@@ -36,16 +36,20 @@ export class SubclassStrategy extends BaseStrategy {
     2. **INCLUDE ALL PARAGRAPHS:** Features often have multiple sections (e.g. "Additionally...", "Once you use..."). Extract EVERYTHING.
     3. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
     4. **HANDLE DUPLICATES:** The text may contain a summary list (e.g. "Level 3: Feature Name") AND a detailed section. **IGNORE THE SUMMARY LIST.** Only extract the **DETAILED** section with the full text.
-    5. **HTML FORMAT:** Wrap paragraphs in <p> tags.
-    6. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
-    7. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
-    8. **HEADER FORMATS:** Recognize BOTH "Feature Name (Level X)" AND "Level X: Feature Name".
+    5. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
+    6. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
+    7. **NAME ACCURACY:** Use the EXACT name found in the header. Do NOT use terms found inside the description (e.g. if header is "Master of None", do NOT call it "False Identity").
+    8. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
+    9. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
+    10. **HEADER FORMATS:** Recognize BOTH "Feature Name (Level X)" AND "Level X: Feature Name".
 
     *** ONE-SHOT EXAMPLE ***
     Input Text:
     "Level 3: Magma Mastery. As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.
     
-    Additionally, you gain resistance to fire damage.
+    Additionally, you choose one of the following benefits:
+    * Searing Skin: You deal 1d4 fire damage to creatures that touch you.
+    * Molten Core: You gain resistance to cold damage.
     
     Once you use this feature, you cannot use it again until you finish a short or long rest."
     
@@ -54,7 +58,7 @@ export class SubclassStrategy extends BaseStrategy {
       "features": [
         {
           "name": "Magma Mastery",
-          "description": "<p>As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.</p><p>Additionally, you gain resistance to fire damage.</p><p>Once you use this feature, you cannot use it again until you finish a short or long rest.</p>",
+          "description": "<p>As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.</p><p>Additionally, you choose one of the following benefits:</p><ul><li><strong>Searing Skin:</strong> You deal 1d4 fire damage to creatures that touch you.</li><li><strong>Molten Core:</strong> You gain resistance to cold damage.</li></ul><p>Once you use this feature, you cannot use it again until you finish a short or long rest.</p>",
           "level": 3,
           "activation": { "type": "action", "cost": 1 },
           "range": { "value": 15, "units": "ft" },

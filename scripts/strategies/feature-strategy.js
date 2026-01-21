@@ -26,23 +26,27 @@ export class FeatureStrategy extends BaseStrategy {
     1. **EXTRACT VERBATIM:** Do NOT summarize. Copy the text EXACTLY as it appears.
     2. **INCLUDE ALL PARAGRAPHS:** Features often have multiple sections (e.g. "Additionally...", "Once you use..."). Extract EVERYTHING.
     3. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
-    4. **HTML FORMAT:** Wrap paragraphs in <p> tags.
-    5. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
+    4. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
+    5. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
+    6. **NAME ACCURACY:** Use the EXACT name found in the header. Do NOT use terms found inside the description (e.g. if header is "Master of None", do NOT call it "False Identity").
+    7. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
 
     *** ONE-SHOT EXAMPLE ***
     Input:
     "Level 3: Magma Mastery. As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.
     
-    Additionally, you gain resistance to fire damage.
+    Additionally, you choose one of the following benefits:
+    * Searing Skin: You deal 1d4 fire damage to creatures that touch you.
+    * Molten Core: You gain resistance to cold damage.
     
-    Once you use this feature, you cannot use it again until you finish a, short or long rest."
+    Once you use this feature, you cannot use it again until you finish a short or long rest."
 
     Output:
     {
       "features": [
         {
           "name": "Magma Mastery",
-          "description": "<p>As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.</p><p>Additionally, you gain resistance to fire damage.</p><p>Once you use this feature, you cannot use it again until you finish a short or long rest.</p>",
+          "description": "<p>As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.</p><p>Additionally, you choose one of the following benefits:</p><ul><li><strong>Searing Skin:</strong> You deal 1d4 fire damage to creatures that touch you.</li><li><strong>Molten Core:</strong> You gain resistance to cold damage.</li></ul><p>Once you use this feature, you cannot use it again until you finish a short or long rest.</p>",
           "level": 3,
           "activation": { "type": "action", "cost": 1 },
           "range": { "value": 15, "units": "ft" },
