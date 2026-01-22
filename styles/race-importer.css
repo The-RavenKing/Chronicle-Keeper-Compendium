@@ -1,7 +1,7 @@
 /* --- Main Window & Layout --- */
 .race-importer-window {
-  min-width: 650px;
-  min-height: 600px;
+  min-width: 800px;
+  min-height: 700px;
   font-family: "Signika", sans-serif;
 }
 
