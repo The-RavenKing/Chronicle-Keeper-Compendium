@@ -76,6 +76,7 @@ export class FeatureStrategy extends BaseStrategy {
         - "Feature Name (Level X)"
         - "Level X: Feature Name"
         - "Feature Name (Available at X Level)"
+    14. **BASE CLASS:** If the text explicitly mentions a base class (e.g. "Warlock feature", "Cleric subclass"), include a "baseClass" field (e.g. "baseClass": "Warlock"). Otherwise, leave it null.
 
     *** ONE-SHOT EXAMPLE ***
     Input:
@@ -137,6 +138,7 @@ export class FeatureStrategy extends BaseStrategy {
           "name": "Feature Name", 
           "description": "FULL HTML CONTENT", 
           "level": 1,
+          "baseClass": "Warlock",
           "activation": { "type": "action", "cost": 1 },
           "range": { "value": null, "units": "ft" },
           "target": { "value": null, "units": "ft", "type": "" },
@@ -176,6 +178,9 @@ export class FeatureStrategy extends BaseStrategy {
 
     let createdCount = 0;
     for (const feat of features) {
+      // Get folder ID if base class is provided
+      const folderId = await this.getOrCreateFolder(featurePack, feat.baseClass);
+
       let cleanDesc = feat.description || "";
 
       if (!cleanDesc.trim().startsWith('<')) {
@@ -228,6 +233,7 @@ export class FeatureStrategy extends BaseStrategy {
         name: feat.name,
         type: 'feat',
         img: 'icons/svg/book.svg',
+        folder: folderId,
         system: {
           description: { value: cleanDesc },
           source: { custom: "Imported Feature" },
