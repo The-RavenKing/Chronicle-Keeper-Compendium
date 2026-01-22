@@ -6,7 +6,7 @@ export class FeatureStrategy extends BaseStrategy {
     this.key = "feature";
   }
 
-  getPrompt(content) {
+  getPrompt(content, options = {}) {
     let cleanContent = content;
     try {
       const sourceTagRegex = new RegExp("\\[.*?\\]", "g");
@@ -16,6 +16,38 @@ export class FeatureStrategy extends BaseStrategy {
       cleanContent = cleanContent.replace(multiNewlineRegex, "\n\n");
     } catch (e) {
       console.warn("Chronicle Keeper | Text cleaning warning:", e);
+    }
+
+    // --- SPECIALIZED PROMPT FOR SPELL LISTS ---
+    if (options.isSpellList) {
+      return `You are a helper for D&D 5e.
+      
+      TASK: Convert the input text into a SINGLE D&D Feature representing an "Expanded Spell List".
+      
+      RULES:
+      1. NAME: The first line is the Feature Name.
+      2. DESCRIPTION: Create an HTML Table (<table>) with columns "Spell Level" and "Spells".
+      3. OUTPUT: Return a JSON object with a single feature.
+
+      Example Input:
+      "Faceless Spells
+      1st: sleep, charm person"
+
+      Example Output:
+      {
+        "features": [
+          {
+            "name": "Faceless Spells",
+            "description": "<p>The expanded spell list.</p><table border='1'><thead><tr><th>Level</th><th>Spells</th></tr></thead><tbody><tr><td>1st</td><td>sleep, charm person</td></tr></tbody></table>",
+            "level": 1
+          }
+        ]
+      }
+
+      SOURCE TEXT:
+      ${cleanContent}
+
+      Return JSON only.`;
     }
 
     return `You are a strict data extraction engine.
@@ -28,10 +60,17 @@ export class FeatureStrategy extends BaseStrategy {
     3. **INCLUDE ALL PARAGRAPHS:** Features often have multiple sections (e.g. "Additionally...", "Once you use..."). Extract EVERYTHING.
     4. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
     5. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
-    6. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
-    7. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..." or "When using Master of None..."), the name is the NEW feature (the Header), NOT the referenced feature.
-    8. **NO EXAMPLE COPYING:** The "ONE-SHOT EXAMPLE" below is for formatted reference only. Do NOT include "Magma Mastery" or "Phantom Echo" in your output. Output ONLY data found in the **SOURCE TEXT**.
-    9. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
+    6. **TABLES:** If the text contains a table (like a Spell List), format it as an HTML <table> with <thead> and <tbody>.
+    7. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
+    8. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..." or "When using Master of None..."), the name is the NEW feature (the Header), NOT the referenced feature.
+    9. **NO EXAMPLE COPYING:** The "ONE-SHOT EXAMPLE" below is for formatted reference only. Do NOT include "Magma Mastery" or "Phantom Echo" in your output. Output ONLY data found in the **SOURCE TEXT**.
+    10. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
+    11. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
+    12. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
+    13. **HEADER FORMATS:** Recognize specific formats:
+        - "Feature Name (Level X)"
+        - "Level X: Feature Name"
+        - "Feature Name (Available at X Level)"
 
     *** ONE-SHOT EXAMPLE ***
     Input:
@@ -44,6 +83,12 @@ export class FeatureStrategy extends BaseStrategy {
 
     Phantom Echo (Available at 6th level)
     When you use your Misty Step feature, you can choose to leave an illusion behind. This illusion lasts until the start of your next turn.
+
+    Eldritch Expanded Spells (Available at 3rd level)
+    The Eldritch Guardian lets you choose from an expanded list of spells when you learn a warlock spell.
+    1st: faerie fire, sleep
+    2nd: calm emotions, phantasmal force
+    3rd: blink, plant growth
     
     Once you use this feature, you cannot use it again until you finish a short or long rest."
 
@@ -70,6 +115,11 @@ export class FeatureStrategy extends BaseStrategy {
           "target": {},
           "save": {},
           "uses": {}
+        },
+        {
+          "name": "Eldritch Expanded Spells",
+          "description": "<p>The Eldritch Guardian lets you choose from an expanded list of spells when you learn a warlock spell.</p><table border='1'><thead><tr><th>Spell Level</th><th>Spells</th></tr></thead><tbody><tr><td>1st</td><td>faerie fire, sleep</td></tr><tr><td>2nd</td><td>calm emotions, phantasmal force</td></tr><tr><td>3rd</td><td>blink, plant growth</td></tr></tbody></table>",
+          "level": 3
         }
       ]
     }
@@ -92,7 +142,9 @@ export class FeatureStrategy extends BaseStrategy {
     }
 
     SOURCE TEXT:
-    ${cleanContent}`;
+    ${cleanContent}
+    
+    IMPORTANT: EXTRACT THE FULL DESCRIPTION VERBATIM. DO NOT TRUNCATE.`;
   }
 
   async create(data) {
@@ -105,15 +157,22 @@ export class FeatureStrategy extends BaseStrategy {
     }
 
     // Safety check for data
-    const features = data.features || [];
+    let features = data.features || [];
+
+    // --- HALLUCINATION FILTER ---
+    // Remove features that match the One-Shot Example names
+    const BLACKLISTED = ["Magma Mastery", "Phantom Echo", "Eldritch Expanded Spells"];
+    features = features.filter(f => !BLACKLISTED.includes(f.name));
+
     if (features.length === 0) {
-      ui.notifications.warn("No features found in text.");
+      ui.notifications.warn("No features found in text (or only examples were found).");
       return;
     }
 
     let createdCount = 0;
     for (const feat of features) {
       let cleanDesc = feat.description || "";
+
       if (!cleanDesc.trim().startsWith('<')) {
         cleanDesc = `<p>${cleanDesc.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`;
       }

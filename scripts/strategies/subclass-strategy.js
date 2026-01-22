@@ -38,12 +38,13 @@ export class SubclassStrategy extends BaseStrategy {
     4. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
     5. **HANDLE DUPLICATES:** The text may contain a summary list (e.g. "Level 3: Feature Name") AND a detailed section. **IGNORE THE SUMMARY LIST.** Only extract the **DETAILED** section with the full text.
     6. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
-    7. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
-    8. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..." or "When using Master of None..."), the name is the NEW feature (the Header), NOT the referenced feature.
-    9. **NO EXAMPLE COPYING:** The "ONE-SHOT EXAMPLE" below is for formatted reference only. Do NOT include "Magma Mastery" or "Phantom Echo" in your output. Output ONLY data found in the **SOURCE TEXT**.
-    10. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
-    11. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
-    12. **HEADER FORMATS:** Recognize specific formats:
+    7. **TABLES:** If the text contains a table (like a Spell List), format it as an HTML <table> with <thead> and <tbody>.
+    8. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
+    9. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..." or "When using Master of None..."), the name is the NEW feature (the Header), NOT the referenced feature.
+    10. **NO EXAMPLE COPYING:** The "ONE-SHOT EXAMPLE" below is for formatted reference only. Do NOT include "Magma Mastery" or "Phantom Echo" in your output. Output ONLY data found in the **SOURCE TEXT**.
+    11. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
+    12. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
+    13. **HEADER FORMATS:** Recognize specific formats:
         - "Feature Name (Level X)"
         - "Level X: Feature Name"
         - "Feature Name (Available at X Level)"
@@ -59,6 +60,12 @@ export class SubclassStrategy extends BaseStrategy {
 
     Phantom Echo (Available at 6th level)
     When you use your Misty Step feature, you can choose to leave an illusion behind. This illusion lasts until the start of your next turn.
+
+    Eldritch Expanded Spells (Available at 3rd level)
+    The Eldritch Guardian lets you choose from an expanded list of spells when you learn a warlock spell.
+    1st: faerie fire, sleep
+    2nd: calm emotions, phantasmal force
+    3rd: blink, plant growth
     
     Once you use this feature, you cannot use it again until you finish a short or long rest."
     
@@ -84,6 +91,11 @@ export class SubclassStrategy extends BaseStrategy {
           "target": {},
           "save": {},
           "uses": {}
+        },
+        {
+          "name": "Eldritch Expanded Spells",
+          "description": "<p>The Eldritch Guardian lets you choose from an expanded list of spells when you learn a warlock spell.</p><table border='1'><thead><tr><th>Spell Level</th><th>Spells</th></tr></thead><tbody><tr><td>1st</td><td>faerie fire, sleep</td></tr><tr><td>2nd</td><td>calm emotions, phantasmal force</td></tr><tr><td>3rd</td><td>blink, plant growth</td></tr></tbody></table>",
+          "level": 3
         }
       ]
     }
@@ -110,13 +122,21 @@ export class SubclassStrategy extends BaseStrategy {
     }
 
     SOURCE TEXT:
-    ${cleanContent}`;
+    ${cleanContent}
+    
+    IMPORTANT: EXTRACT THE FULL DESCRIPTION VERBATIM. DO NOT TRUNCATE.`;
   }
 
   async create(data) {
     // --- SAFETY CHECKS ---
     data.name = data.name || "Unknown Subclass";
     data.baseClass = data.baseClass || "Warlock";
+
+    // --- HALLUCINATION FILTER ---
+    if (data.features) {
+      const BLACKLISTED = ["Magma Mastery", "Phantom Echo", "Eldritch Expanded Spells"];
+      data.features = data.features.filter(f => !BLACKLISTED.includes(f.name));
+    }
 
     // --- DEBUGGING ---
     console.log("Chronicle Keeper | -------------------------------------------");

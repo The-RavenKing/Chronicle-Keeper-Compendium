@@ -130,8 +130,11 @@ export class RaceImporterApp extends Application {
     try {
       this._showStatus('info', `Parsing ${this.currentStrategy.key} with Ollama AI...`);
 
+      this._showStatus('info', `Parsing ${this.currentStrategy.key} with Ollama AI...`);
+
       // 1. Get the specific prompt for the current strategy
-      const prompt = this.currentStrategy.getPrompt(content);
+      const isSpellList = this.element.find('#is-expanded-spell-list').is(':checked');
+      const prompt = this.currentStrategy.getPrompt(content, { isSpellList });
 
       // 2. Send prompt to Ollama (Generic logic)
       const jsonData = await this._callOllama(prompt);
