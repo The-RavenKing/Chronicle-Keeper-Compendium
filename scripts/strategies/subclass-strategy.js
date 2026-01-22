@@ -25,8 +25,8 @@ export class SubclassStrategy extends BaseStrategy {
 
     *** SCHEMA ***
     {
-      "name": "The Subclass/Archetype Name (e.g. 'The Faceless One')",
-      "baseClass": "The core class (e.g. 'Warlock')",
+      "name": "The Subclass/Archetype Name (e.g. 'Time Domain')",
+      "baseClass": "The core class (e.g. 'Cleric')",
       "description": "Intro paragraphs only (flavor text)",
       "features": [
         { "name": "Feature Name", "level": 3 }
@@ -34,40 +34,35 @@ export class SubclassStrategy extends BaseStrategy {
     }
 
     *** CRITICAL RULES ***
-    1. **SUBCLASS NAME:** Use only the name of the archetype. Do NOT include the class name (e.g. Use 'The Faceless One', NOT 'The Faceless One Warlock').
-    2. **SPELL LISTS:** ALWAYS include the "Expanded Spell List" or "Subclass Spells" (e.g. 'Facelessone Archfey Spells'). 
-    3. **EXHAUSTIVE EXTRACTION:** You MUST extract EVERY feature mentioned. This includes "Ethereal Techniques" or other bottom-of-page supplemental features.
+    1. **SUBCLASS NAME:** Use only the name of the archetype. Do NOT use the base class name as the subclass name (e.g. If it is a Cleric Domain, use 'Time Domain', NOT 'Cleric').
+    2. **SPELL LISTS:** ALWAYS include the "Expanded Spell List" or "Subclass Spells" (e.g. 'Time Domain Spells'). 
+    3. **EXHAUSTIVE EXTRACTION:** You MUST extract EVERY feature mentioned.
     4. **LEVELS:** Pay close attention to level indicators like "(3rd Level)" or "Level 6:".
     5. **NO CONTENT:** Do NOT extract feature descriptions. Only Name and Level.
 
     *** ONE-SHOT EXAMPLE ***
     Input:
-    "Base Class: Warlock
-     The Magma Soul
-     The Magma Soul is a patron...
+    "Life Domain
+     The Life Domain is for clerics...
      
-     Expanded Spell List
-     Warlock Level Spells
-     1st magma bomb
+     Life Domain Spells
+     Cleric Level Spells
+     1st bless, cure wounds
      
-     Burning Soul (3rd level)
+     Disciple of Life (1st level)
      You gain...
      
-     Level 6: Magma Mastery
-     
-     Ethereal Arts:
-     Flowing Lava (Available at 6th level)"
+     Level 6: Blessed Healer"
 
     Correct Output:
     {
-      "name": "The Magma Soul",
-      "baseClass": "Warlock",
-      "description": "<p>The Magma Soul is a patron...</p>",
+      "name": "Life Domain",
+      "baseClass": "Cleric",
+      "description": "<p>The Life Domain is for clerics...</p>",
       "features": [
-        { "name": "Expanded Spell List", "level": 1 },
-        { "name": "Burning Soul", "level": 3 },
-        { "name": "Magma Mastery", "level": 6 },
-        { "name": "Flowing Lava", "level": 6 }
+        { "name": "Life Domain Spells", "level": 1 },
+        { "name": "Disciple of Life", "level": 1 },
+        { "name": "Blessed Healer", "level": 6 }
       ]
     }
     *** END EXAMPLE ***
@@ -113,12 +108,13 @@ export class SubclassStrategy extends BaseStrategy {
     let clean = name.replace(/^Level \d+:\s*/i, "").trim();
 
     // Remove Class suffixes (e.g. "Faceless One Warlock" -> "Faceless One")
+    // If the name IS just the base class (e.g. "Cleric"), don't return "Unknown"
     if (baseClass) {
       const classRegex = new RegExp(`\\s+${baseClass}$`, 'i');
       clean = clean.replace(classRegex, "").trim();
     }
 
-    return clean || "Unknown Subclass";
+    return clean || name || "Unknown Subclass";
   }
 
   async create(data, options = {}) {
@@ -131,6 +127,14 @@ export class SubclassStrategy extends BaseStrategy {
     data.name = manualData.name || this._cleanSubclassName(data.name, data.baseClass);
 
     console.log(`Chronicle Keeper | Aggregating: ${data.name} (${data.baseClass})`);
+
+    const subclassPack = game.packs.get("world.chronicle-keeper-subclasses");
+    const featurePack = game.packs.get("world.chronicle-keeper-features");
+
+    if (!subclassPack || !featurePack) {
+      ui.notifications.error("Missing compendiums! Please re-initialize module.");
+      return;
+    }
 
     // 1. Handle Folder Nesting for Features: Base Class -> Subclass Name
     const baseFolderId = await this.getOrCreateFolder(featurePack, data.baseClass);
