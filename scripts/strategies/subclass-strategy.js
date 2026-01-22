@@ -39,9 +39,13 @@ export class SubclassStrategy extends BaseStrategy {
     5. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
     6. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
     7. **NAME ACCURACY:** Use the EXACT name found in the header. Do NOT use terms found inside the description (e.g. if header is "Master of None", do NOT call it "False Identity").
-    8. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
-    9. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
-    10. **HEADER FORMATS:** Recognize BOTH "Feature Name (Level X)" AND "Level X: Feature Name".
+    8. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..."), the name is the NEW feature (the Header), NOT the referenced feature.
+    9. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
+    10. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
+    11. **HEADER FORMATS:** Recognize specific formats:
+        - "Feature Name (Level X)"
+        - "Level X: Feature Name"
+        - "Feature Name (Available at X Level)"
 
     *** ONE-SHOT EXAMPLE ***
     Input Text:
@@ -50,6 +54,8 @@ export class SubclassStrategy extends BaseStrategy {
     Additionally, you choose one of the following benefits:
     * Searing Skin: You deal 1d4 fire damage to creatures that touch you.
     * Molten Core: You gain resistance to cold damage.
+
+    Level 6: Phantom Echo. When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.
     
     Once you use this feature, you cannot use it again until you finish a short or long rest."
     
@@ -65,6 +71,16 @@ export class SubclassStrategy extends BaseStrategy {
           "target": { "value": 15, "units": "ft", "type": "cone" },
           "save": { "ability": "dex", "scaling": "spell" },
           "uses": { "value": 1, "max": "1", "per": "sr" }
+        },
+        {
+          "name": "Phantom Echo",
+          "description": "<p>When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.</p>",
+          "level": 6,
+          "activation": {},
+          "range": {},
+          "target": {},
+          "save": {},
+          "uses": {}
         }
       ]
     }

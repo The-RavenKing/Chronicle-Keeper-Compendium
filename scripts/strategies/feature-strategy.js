@@ -29,7 +29,8 @@ export class FeatureStrategy extends BaseStrategy {
     4. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
     5. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
     6. **NAME ACCURACY:** Use the EXACT name found in the header. Do NOT use terms found inside the description (e.g. if header is "Master of None", do NOT call it "False Identity").
-    7. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
+    7. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..."), the name is the NEW feature (the Header), NOT the referenced feature.
+    8. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
 
     *** ONE-SHOT EXAMPLE ***
     Input:
@@ -38,6 +39,8 @@ export class FeatureStrategy extends BaseStrategy {
     Additionally, you choose one of the following benefits:
     * Searing Skin: You deal 1d4 fire damage to creatures that touch you.
     * Molten Core: You gain resistance to cold damage.
+
+    Level 6: Phantom Echo. When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.
     
     Once you use this feature, you cannot use it again until you finish a short or long rest."
 
@@ -54,6 +57,16 @@ export class FeatureStrategy extends BaseStrategy {
           "save": { "ability": "dex", "scaling": "spell" },
           "damage": [ { "formula": "3d6", "type": "fire" } ],
           "uses": { "value": 1, "max": "1", "per": "sr" }
+        },
+        {
+          "name": "Phantom Echo",
+          "description": "<p>When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.</p>",
+          "level": 6,
+          "activation": {},
+          "range": {},
+          "target": {},
+          "save": {},
+          "uses": {}
         }
       ]
     }
