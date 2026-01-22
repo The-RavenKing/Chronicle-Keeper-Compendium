@@ -154,7 +154,7 @@ export class FeatureStrategy extends BaseStrategy {
     IMPORTANT: EXTRACT THE FULL DESCRIPTION VERBATIM. DO NOT TRUNCATE.`;
   }
 
-  async create(data) {
+  async create(data, options = {}) {
     console.log("Chronicle Keeper | Creating Features...");
     const featurePack = game.packs.get("world.chronicle-keeper-features");
 
@@ -162,6 +162,8 @@ export class FeatureStrategy extends BaseStrategy {
       ui.notifications.error("Missing feature compendium!");
       return;
     }
+
+    const manualData = options.manualData || {};
 
     // Safety check for data
     let features = data.features || [];
@@ -178,8 +180,21 @@ export class FeatureStrategy extends BaseStrategy {
 
     let createdCount = 0;
     for (const feat of features) {
-      // Get folder ID if base class is provided
-      const folderId = await this.getOrCreateFolder(featurePack, feat.baseClass);
+      // 1. Determine Base Class & Subclass (Manual Override Priority)
+      const baseClass = manualData.baseClass || feat.baseClass || "General";
+      const subclassName = manualData.subclass || feat.subclass || null;
+
+      // 2. Handle Folder Nesting: Base Class -> Subclass
+      const baseFolderId = await this.getOrCreateFolder(featurePack, baseClass);
+      let folderId = baseFolderId;
+      if (subclassName) {
+        folderId = await this.getOrCreateFolder(featurePack, subclassName, baseFolderId);
+      }
+
+      // 3. Determine Name (Manual Override Priority)
+      // Note: If multiple features are found, we only override the name if there's just one feature,
+      // or if we want to use the override as a prefix. For now, we'll use it if provided.
+      const name = manualData.name || feat.name;
 
       let cleanDesc = feat.description || "";
 
@@ -230,13 +245,13 @@ export class FeatureStrategy extends BaseStrategy {
       const requirements = feat.requirements || (feat.level ? `Level ${feat.level}` : "");
 
       const featItem = {
-        name: feat.name,
+        name: name,
         type: 'feat',
         img: 'icons/svg/book.svg',
         folder: folderId,
         system: {
           description: { value: cleanDesc },
-          source: { custom: "Imported Feature" },
+          source: { custom: manualData.subclass || `Imported ${baseClass} Feature` },
           type: { value: 'class', subtype: '' },
           requirements: requirements,
           activation: activation,
@@ -297,7 +312,7 @@ export class FeatureStrategy extends BaseStrategy {
         featItem.system.activities[activityId] = {
           type: "save",
           _id: activityId,
-          name: feat.name,
+          name: name,
           activation: cleanActivation(activation),
           range: cleanRange(range),
           target: cleanTarget(target),
@@ -313,7 +328,7 @@ export class FeatureStrategy extends BaseStrategy {
         featItem.system.activities[activityId] = {
           type: "damage",
           _id: activityId,
-          name: feat.name,
+          name: name,
           activation: cleanActivation(activation),
           range: cleanRange(range),
           target: cleanTarget(target),
@@ -325,7 +340,7 @@ export class FeatureStrategy extends BaseStrategy {
         featItem.system.activities[activityId] = {
           type: "utility",
           _id: activityId,
-          name: feat.name,
+          name: name,
           activation: cleanActivation(activation),
           range: cleanRange(range),
           target: cleanTarget(target),
@@ -353,7 +368,7 @@ export class FeatureStrategy extends BaseStrategy {
       featItem.effects = effects;
 
       await featurePack.documentClass.create(featItem, { pack: featurePack.collection });
-      console.log(`   - Created Feature: ${feat.name}`);
+      console.log(`   - Created Feature: ${name}`);
       createdCount++;
     }
 

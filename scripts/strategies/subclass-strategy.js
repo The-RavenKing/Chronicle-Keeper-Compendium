@@ -121,24 +121,24 @@ export class SubclassStrategy extends BaseStrategy {
     return clean || "Unknown Subclass";
   }
 
-  async create(data) {
+  async create(data, options = {}) {
     console.log("Chronicle Keeper | Subclass Data Received:", data);
     data = this.normalizeData(data);
 
-    data.baseClass = data.baseClass || "Warlock";
-    data.name = this._cleanSubclassName(data.name, data.baseClass);
+    const manualData = options.manualData || {};
+
+    data.baseClass = manualData.baseClass || data.baseClass || "Warlock";
+    data.name = manualData.name || this._cleanSubclassName(data.name, data.baseClass);
 
     console.log(`Chronicle Keeper | Aggregating: ${data.name} (${data.baseClass})`);
 
-    const subclassPack = game.packs.get("world.chronicle-keeper-subclasses");
-    const featurePack = game.packs.get("world.chronicle-keeper-features");
+    // 1. Handle Folder Nesting for Features: Base Class -> Subclass Name
+    const baseFolderId = await this.getOrCreateFolder(featurePack, data.baseClass);
+    const featureFolderId = await this.getOrCreateFolder(featurePack, data.name, baseFolderId);
 
-    if (!subclassPack || !featurePack) {
-      ui.notifications.error("Missing compendiums! Please re-initialize module.");
-      return;
-    }
-
+    // Subclass itself stays in the Base Class folder for organization
     const subclassFolderId = await this.getOrCreateFolder(subclassPack, data.baseClass);
+
     const existingFeatures = featurePack.index || await featurePack.getIndex();
 
     const featureUuidsByLevel = {};

@@ -87,6 +87,9 @@ export class RaceImporterApp extends Application {
     html.find('#ollama-url').change(this._onSettingChange.bind(this));
     html.find('#ollama-model').change(this._onSettingChange.bind(this));
     html.find('#target-compendium').change(this._onSettingChange.bind(this));
+
+    // Trigger initial UI state
+    this._onTypeChange({ currentTarget: { value: html.find('#import-type-select').val() } });
   }
 
   /* -------------------------------------------- */
@@ -111,6 +114,23 @@ export class RaceImporterApp extends Application {
     if (this.strategies[type]) {
       this.currentStrategy = this.strategies[type];
       console.log(`Chronicle Keeper | Switched strategy to: ${type}`);
+
+      // Update UI visibility for Overrides and Spell List options
+      const overrides = this.element.find('#metadata-overrides');
+      const spellList = this.element.find('#is-expanded-spell-list').closest('.race-importer-form-group');
+
+      if (type === 'feature' || type === 'subclass' || type === 'spell') {
+        overrides.show();
+      } else {
+        overrides.hide();
+      }
+
+      const showSpellList = type === 'feature' || type === 'subclass' || type === 'spell';
+      if (showSpellList) {
+        spellList.show();
+      } else {
+        spellList.hide();
+      }
     } else {
       console.error(`Chronicle Keeper | Unknown strategy type: ${type}`);
     }
@@ -130,21 +150,28 @@ export class RaceImporterApp extends Application {
     try {
       this._showStatus('info', `Parsing ${this.currentStrategy.key} with Ollama AI...`);
 
-      this._showStatus('info', `Parsing ${this.currentStrategy.key} with Ollama AI...`);
+      // 1. Collect Manual Metadata Overrides
+      const manualData = {
+        name: this.element.find('#manual-name').val().trim(),
+        baseClass: this.element.find('#manual-base-class').val().trim(),
+        subclass: this.element.find('#manual-subclass').val().trim()
+      };
 
-      // 1. Get the specific prompt for the current strategy
+      // 2. Get the specific prompt for the current strategy
       const isSpellList = this.element.find('#is-expanded-spell-list').is(':checked');
-      const prompt = this.currentStrategy.getPrompt(content, { isSpellList });
+      const prompt = this.currentStrategy.getPrompt(content, { isSpellList, manualData });
 
-      // 2. Send prompt to Ollama (Generic logic)
+      // 3. Send prompt to Ollama (Generic logic)
       const jsonData = await this._callOllama(prompt);
 
-      // 3. Validate data using the strategy's rules
+      // 4. Validate data using the strategy's rules
       const validatedData = this.currentStrategy.validate(jsonData);
 
-      // 4. Create the items in Foundry using the strategy's logic
+      // 5. Create the items in Foundry using the strategy's logic
       this._showStatus('info', "Creating Foundry document...");
-      await this.currentStrategy.create(validatedData);
+
+      // Pass manual overrides into create
+      await this.currentStrategy.create(validatedData, { manualData });
 
       this._showStatus('success', `Done!`);
       // ui.notifications.info is handled inside some strategies, but good to have a fallback here if needed

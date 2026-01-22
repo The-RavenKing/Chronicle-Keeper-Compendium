@@ -63,8 +63,15 @@
 }
 
 @keyframes fadein {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- Form Elements --- */
@@ -93,14 +100,18 @@
   font-family: inherit;
   font-size: 14px;
   transition: all 0.2s ease;
-  box-sizing: border-box; /* Ensures padding doesn't break width */
+  box-sizing: border-box;
+  /* Ensures padding doesn't break width */
 }
 
 /* Specific fix for Dropdowns (Select) */
 .race-importer-form-group select {
-  height: 38px; /* Force a comfortable height */
-  padding: 0 10px; /* Horizontal padding only */
-  line-height: 38px; /* Centers text vertically */
+  height: 38px;
+  /* Force a comfortable height */
+  padding: 0 10px;
+  /* Horizontal padding only */
+  line-height: 38px;
+  /* Centers text vertically */
   cursor: pointer;
 }
 
@@ -126,7 +137,7 @@
 }
 
 .race-importer-form-group textarea {
-  min-height: 350px;
+  min-height: 200px;
   padding: 12px;
   line-height: 1.5;
   font-family: "Courier New", monospace;
@@ -170,7 +181,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 40px; /* Consistent button height */
+  height: 40px;
+  /* Consistent button height */
 }
 
 .race-importer-button:hover:not(:disabled) {
@@ -192,3 +204,4 @@
   opacity: 0.5;
   cursor: not-allowed;
   filter: grayscale(100%);
+}

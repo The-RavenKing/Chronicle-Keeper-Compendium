@@ -9,20 +9,37 @@
   </div>
 
   <div id="text-content" class="race-importer-content active">
-    
+
     <div class="race-importer-form-group" style="margin-bottom: 20px;">
       <label for="import-type-select" style="color: #dcb367;">Content Type</label>
       <select id="import-type-select" style="width: 100%; height: 40px; font-weight: bold;">
         {{#each importTypes}}
-          <option value="{{this.value}}" {{#if this.disabled}}disabled{{/if}}>{{this.label}}</option>
+        <option value="{{this.value}}" {{#if this.disabled}}disabled{{/if}}>{{this.label}}</option>
         {{/each}}
       </select>
     </div>
 
-    <!-- Checkbox for Expanded Spell Lists -->
-    <div class="race-importer-form-group" style="margin-bottom: 20px; display: flex; align-items: center;">
-      <input type="checkbox" id="is-expanded-spell-list" style="margin-right: 10px;">
-      <label for="is-expanded-spell-list" style="margin-bottom: 0; cursor: pointer;">Is Expanded Spell List?</label>
+    <!-- Manual Metadata Overrides (Hidden by default) -->
+    <div id="metadata-overrides"
+      style="display: none; border: 1px solid #444; padding: 15px; border-radius: 4px; background: rgba(0,0,0,0.2); margin-bottom: 20px;">
+      <h3
+        style="color: #dcb367; font-size: 11px; text-transform: uppercase; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+        <i class="fas fa-edit"></i> Manual Overrides
+      </h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="race-importer-form-group" style="margin-bottom: 0;">
+          <label style="font-size: 10px;">Item Name Override</label>
+          <input type="text" id="manual-name" placeholder="e.g. Life Domain">
+        </div>
+        <div class="race-importer-form-group" style="margin-bottom: 0;">
+          <label style="font-size: 10px;">Base Class (Folder)</label>
+          <input type="text" id="manual-base-class" placeholder="e.g. Cleric">
+        </div>
+        <div class="race-importer-form-group" style="margin-bottom: 0; grid-column: span 2;">
+          <label style="font-size: 10px;">Subclass / Grouping</label>
+          <input type="text" id="manual-subclass" placeholder="e.g. Life Domain">
+        </div>
+      </div>
     </div>
 
     <div class="race-importer-instructions">
