@@ -25,20 +25,25 @@ export class FeatureStrategy extends BaseStrategy {
       TASK: Convert the input text into a SINGLE D&D Feature representing an "Expanded Spell List".
       
       RULES:
-      1. NAME: The first line is the Feature Name.
-      2. DESCRIPTION: Create an HTML Table (<table>) with columns "Spell Level" and "Spells".
+      1. NAME: The first line is the Feature Name. Remove "Level X:" prefixes. Keep the rest of the name COMPLETE. Do not shorten it.
+      2. DESCRIPTION: 
+         - Start with the introduction text VERBATIM (e.g., "The [Name] lets you choose...").
+         - Then create a COMPLETE HTML Table (<table>) containing EVERY row from the source text. Do NOT truncate.
+         - Columns: "Spell Level" and "Spells".
       3. OUTPUT: Return a JSON object with a single feature.
 
       Example Input:
-      "Faceless Spells
-      1st: sleep, charm person"
+      "Guardian Expanded Spells
+      The Guardian offers these spells.
+      1st: sleep, charm person
+      2nd: darkness, hold person"
 
       Example Output:
       {
         "features": [
           {
-            "name": "Faceless Spells",
-            "description": "<p>The expanded spell list.</p><table border='1'><thead><tr><th>Level</th><th>Spells</th></tr></thead><tbody><tr><td>1st</td><td>sleep, charm person</td></tr></tbody></table>",
+            "name": "Guardian Expanded Spells",
+            "description": "<p>The Guardian offers these spells.</p><table border='1'><thead><tr><th>Spell Level</th><th>Spells</th></tr></thead><tbody><tr><td>1st</td><td>sleep, charm person</td></tr><tr><td>2nd</td><td>darkness, hold person</td></tr></tbody></table>",
             "level": 1
           }
         ]
