@@ -23,24 +23,27 @@ export class FeatureStrategy extends BaseStrategy {
     TASK: Extract D&D 5e CLASS FEATURE data from the text below.
 
     *** CRITICAL RULES ***
-    1. **EXTRACT VERBATIM:** Do NOT summarize. Copy the text EXACTLY as it appears.
-    2. **INCLUDE ALL PARAGRAPHS:** Features often have multiple sections (e.g. "Additionally...", "Once you use..."). Extract EVERYTHING.
-    3. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
-    4. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
-    5. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
-    6. **NAME ACCURACY:** Use the EXACT name found in the header. Do NOT use terms found inside the description (e.g. if header is "Master of None", do NOT call it "False Identity").
-    7. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..."), the name is the NEW feature (the Header), NOT the referenced feature.
-    8. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
+    1. **NAME = FIRST LINE:** The first line of the text is the Feature Name. Use it VERBATIM. Do NOT look for a name in the description.
+    2. **EXTRACT VERBATIM:** Do NOT summarize. Copy the text EXACTLY as it appears. Include EVERY sentence, especially the final one.
+    3. **INCLUDE ALL PARAGRAPHS:** Features often have multiple sections (e.g. "Additionally...", "Once you use..."). Extract EVERYTHING.
+    4. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
+    5. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
+    6. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
+    7. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..." or "When using Master of None..."), the name is the NEW feature (the Header), NOT the referenced feature.
+    8. **NO EXAMPLE COPYING:** The "ONE-SHOT EXAMPLE" below is for formatted reference only. Do NOT include "Magma Mastery" or "Phantom Echo" in your output. Output ONLY data found in the **SOURCE TEXT**.
+    9. **REQUIREMENTS:** Only include class requirements if explicitly stated in the text. DO NOT HALLUCINATE "Fighter".
 
     *** ONE-SHOT EXAMPLE ***
     Input:
-    "Level 3: Magma Mastery. As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.
+    "Magma Mastery (Available at 3rd level)
+    As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.
     
     Additionally, you choose one of the following benefits:
     * Searing Skin: You deal 1d4 fire damage to creatures that touch you.
     * Molten Core: You gain resistance to cold damage.
 
-    Level 6: Phantom Echo. When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.
+    Phantom Echo (Available at 6th level)
+    When you use your Misty Step feature, you can choose to leave an illusion behind. This illusion lasts until the start of your next turn.
     
     Once you use this feature, you cannot use it again until you finish a short or long rest."
 
@@ -60,7 +63,7 @@ export class FeatureStrategy extends BaseStrategy {
         },
         {
           "name": "Phantom Echo",
-          "description": "<p>When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.</p>",
+          "description": "<p>When you use your Misty Step feature, you can choose to leave an illusion behind. This illusion lasts until the start of your next turn.</p>",
           "level": 6,
           "activation": {},
           "range": {},

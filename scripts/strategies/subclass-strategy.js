@@ -32,30 +32,33 @@ export class SubclassStrategy extends BaseStrategy {
     TASK: Extract D&D 5e SUBCLASS data from the text below.
 
     *** CRITICAL RULES ***
-    1. **EXTRACT VERBATIM:** Do NOT summarize. Copy the text EXACTLY as it appears.
-    2. **INCLUDE ALL PARAGRAPHS:** Features often have multiple sections (e.g. "Additionally...", "Once you use..."). Extract EVERYTHING.
-    3. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
-    4. **HANDLE DUPLICATES:** The text may contain a summary list (e.g. "Level 3: Feature Name") AND a detailed section. **IGNORE THE SUMMARY LIST.** Only extract the **DETAILED** section with the full text.
-    5. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
-    6. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
-    7. **NAME ACCURACY:** Use the EXACT name found in the header. Do NOT use terms found inside the description (e.g. if header is "Master of None", do NOT call it "False Identity").
-    8. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..."), the name is the NEW feature (the Header), NOT the referenced feature.
-    9. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
-    10. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
-    11. **HEADER FORMATS:** Recognize specific formats:
+    1. **NAME = FIRST LINE:** The first line of the text is the Feature Name. Use it VERBATIM. Do NOT look for a name in the description.
+    2. **EXTRACT VERBATIM:** Do NOT summarize. Copy the text EXACTLY as it appears. Include EVERY sentence, especially the final one.
+    3. **INCLUDE ALL PARAGRAPHS:** Features often have multiple sections (e.g. "Additionally...", "Once you use..."). Extract EVERYTHING.
+    4. **MECHANICS:** Extract Action Type, Range, Target, Saving Throws, and Damage from ANY part of the text.
+    5. **HANDLE DUPLICATES:** The text may contain a summary list (e.g. "Level 3: Feature Name") AND a detailed section. **IGNORE THE SUMMARY LIST.** Only extract the **DETAILED** section with the full text.
+    6. **HTML FORMAT:** Wrap paragraphs in <p> tags. Use <ul>/<li> for lists.
+    7. **NO SPLITTING SUB-OPTIONS:** If a feature lists choices (e.g. "Choose one:", "Options:", or bullet points), KEEP them in the Description. Do **NOT** create separate features for them.
+    8. **IGNORE REFERENCES:** If the text modifies another feature (e.g. "When you use Misty Escape..." or "When using Master of None..."), the name is the NEW feature (the Header), NOT the referenced feature.
+    9. **NO EXAMPLE COPYING:** The "ONE-SHOT EXAMPLE" below is for formatted reference only. Do NOT include "Magma Mastery" or "Phantom Echo" in your output. Output ONLY data found in the **SOURCE TEXT**.
+    10. **SPELLS:** If you see "Expanded Spell List", extract it as a "spells" array.
+    11. **NAME DETECTION:** If the name is not labeled "Name:", look at the first paragraph (e.g. "The Faceless One is..." -> Name: "The Faceless One").
+    12. **HEADER FORMATS:** Recognize specific formats:
         - "Feature Name (Level X)"
         - "Level X: Feature Name"
         - "Feature Name (Available at X Level)"
 
     *** ONE-SHOT EXAMPLE ***
     Input Text:
-    "Level 3: Magma Mastery. As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.
+    "Magma Mastery (Available at 3rd level)
+    As an action, you create a sphere of magma in a 15-foot cone. Each creature in that area must make a Dexterity saving throw. On a failed save, the creature takes 3d6 fire damage.
     
     Additionally, you choose one of the following benefits:
     * Searing Skin: You deal 1d4 fire damage to creatures that touch you.
     * Molten Core: You gain resistance to cold damage.
 
-    Level 6: Phantom Echo. When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.
+    Phantom Echo (Available at 6th level)
+    When you use your Misty Step feature, you can choose to leave an illusion behind. This illusion lasts until the start of your next turn.
     
     Once you use this feature, you cannot use it again until you finish a short or long rest."
     
@@ -74,7 +77,7 @@ export class SubclassStrategy extends BaseStrategy {
         },
         {
           "name": "Phantom Echo",
-          "description": "<p>When you use your Misty Step feature, you can choose to leave an illusion behind that lasts until the end of your next turn.</p>",
+          "description": "<p>When you use your Misty Step feature, you can choose to leave an illusion behind. This illusion lasts until the start of your next turn.</p>",
           "level": 6,
           "activation": {},
           "range": {},
